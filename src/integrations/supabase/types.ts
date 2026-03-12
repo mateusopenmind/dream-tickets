@@ -14,7 +14,181 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cartoes: {
+        Row: {
+          codigo: string
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clientes: {
+        Row: {
+          codigo: string
+          created_at: string
+          id: string
+          nome_fantasia: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          id?: string
+          nome_fantasia: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          id?: string
+          nome_fantasia?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      contas: {
+        Row: {
+          codigo: string
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      emissoes: {
+        Row: {
+          cartao_id: string | null
+          cliente_id: string | null
+          conta_id: string | null
+          created_at: string
+          data_emissao: string
+          emissor: string | null
+          hora: string | null
+          id: string
+          localizador: string
+          milhas_cobrado: number | null
+          nome_operacao: string | null
+          observacao: string | null
+          origem_venda: string | null
+          outros_cobrado: number | null
+          passageiros_qtd: number | null
+          preco_milheiro: number | null
+          preco_total: number | null
+          programa: string | null
+          reprocessar: boolean | null
+          status_pix: string | null
+          taxas_cobrado: number | null
+          txid: string | null
+          updated_at: string
+          valor_recebido: number | null
+        }
+        Insert: {
+          cartao_id?: string | null
+          cliente_id?: string | null
+          conta_id?: string | null
+          created_at?: string
+          data_emissao: string
+          emissor?: string | null
+          hora?: string | null
+          id?: string
+          localizador: string
+          milhas_cobrado?: number | null
+          nome_operacao?: string | null
+          observacao?: string | null
+          origem_venda?: string | null
+          outros_cobrado?: number | null
+          passageiros_qtd?: number | null
+          preco_milheiro?: number | null
+          preco_total?: number | null
+          programa?: string | null
+          reprocessar?: boolean | null
+          status_pix?: string | null
+          taxas_cobrado?: number | null
+          txid?: string | null
+          updated_at?: string
+          valor_recebido?: number | null
+        }
+        Update: {
+          cartao_id?: string | null
+          cliente_id?: string | null
+          conta_id?: string | null
+          created_at?: string
+          data_emissao?: string
+          emissor?: string | null
+          hora?: string | null
+          id?: string
+          localizador?: string
+          milhas_cobrado?: number | null
+          nome_operacao?: string | null
+          observacao?: string | null
+          origem_venda?: string | null
+          outros_cobrado?: number | null
+          passageiros_qtd?: number | null
+          preco_milheiro?: number | null
+          preco_total?: number | null
+          programa?: string | null
+          reprocessar?: boolean | null
+          status_pix?: string | null
+          taxas_cobrado?: number | null
+          txid?: string | null
+          updated_at?: string
+          valor_recebido?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emissoes_cartao_id_fkey"
+            columns: ["cartao_id"]
+            isOneToOne: false
+            referencedRelation: "cartoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emissoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emissoes_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "contas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
