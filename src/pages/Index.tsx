@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Pencil, Trash2, BanknoteIcon, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { EmissaoFormDialog } from "@/components/EmissaoFormDialog";
+import { DashboardCards } from "@/components/DashboardCards";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 
 export default function EmissoesPage() {
@@ -73,6 +74,8 @@ export default function EmissoesPage() {
 
   return (
     <div>
+      <DashboardCards emissoes={emissoes} />
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-display font-bold">Emissões</h1>
         <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Nova Emissão</Button>
