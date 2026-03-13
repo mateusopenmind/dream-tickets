@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Pencil, Trash2, BanknoteIcon, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { EmissaoFormDialog } from "@/components/EmissaoFormDialog";
+import { DashboardCards } from "@/components/DashboardCards";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 
 export default function EmissoesPage() {
