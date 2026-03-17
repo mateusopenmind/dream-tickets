@@ -95,17 +95,41 @@ export default function AuthPage() {
               />
             </div>
             {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefone (com DDD)</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="(54)99917-6040"
-                  value={phone}
-                  onChange={(e) => setPhone(formatPhone(e.target.value))}
-                  required
-                />
-              </div>
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">Nome</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="Bruno"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Sobrenome</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Silva"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefone (com DDD)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="(54)99917-6040"
+                    value={phone}
+                    onChange={(e) => setPhone(formatPhone(e.target.value))}
+                    required
+                  />
+                </div>
+              </>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
