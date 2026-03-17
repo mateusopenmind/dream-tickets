@@ -44,7 +44,7 @@ export default function AuthPage() {
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { phone: phoneDigits },
+            data: { phone: phoneDigits, first_name: firstName, last_name: lastName },
           },
         });
         if (error) throw error;
