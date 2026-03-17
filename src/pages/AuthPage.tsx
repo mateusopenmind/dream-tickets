@@ -7,10 +7,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "@/components/ui/sonner";
 import { Plane, Loader2 } from "lucide-react";
 
+function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,13 +31,22 @@ export default function AuthPage() {
         if (error) throw error;
         toast.success("Login realizado com sucesso!");
       } else {
+        const phoneDigits = phone.replace(/\D/g, "");
+        if (phoneDigits.length < 10 || phoneDigits.length > 11) {
+          toast.error("Telefone inválido. Use o formato (54)99917-6040");
+          setLoading(false);
+          return;
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { phone: phoneDigits },
+          },
         });
         if (error) throw error;
-        toast.success("Cadastro realizado! Verifique seu e-mail para confirmar.");
+        toast.success("Cadastro realizado com sucesso!");
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao autenticar");
@@ -75,6 +92,19 @@ export default function AuthPage() {
                 minLength={6}
               />
             </div>
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone (com DDD)</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="(54)99917-6040"
+                  value={phone}
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
+                  required
+                />
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLogin ? "Entrar" : "Cadastrar"}
