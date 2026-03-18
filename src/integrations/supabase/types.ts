@@ -88,79 +88,115 @@ export type Database = {
       }
       emissoes: {
         Row: {
+          cancelar: boolean | null
           cartao_id: string | null
           cliente_id: string | null
+          codigo_la: string | null
           conta_id: string | null
           created_at: string
           data_emissao: string
+          data_pagto_facial: string | null
+          data_recebimento: string | null
+          data_voo_ida: string | null
           emissor: string | null
           hora: string | null
           id: string
+          id_externo: string | null
           localizador: string
           milhas_cobrado: number | null
+          milhas_real: number | null
           nome_operacao: string | null
+          obs_pix: string | null
           observacao: string | null
           origem_venda: string | null
           outros_cobrado: number | null
+          outros_real: number | null
+          pagar_facial: string | null
           passageiros_qtd: number | null
+          percentual_cb: number | null
           preco_milheiro: number | null
           preco_total: number | null
           programa: string | null
           reprocessar: boolean | null
           status_pix: string | null
           taxas_cobrado: number | null
+          taxas_real: number | null
           txid: string | null
           updated_at: string
           valor_recebido: number | null
         }
         Insert: {
+          cancelar?: boolean | null
           cartao_id?: string | null
           cliente_id?: string | null
+          codigo_la?: string | null
           conta_id?: string | null
           created_at?: string
           data_emissao: string
+          data_pagto_facial?: string | null
+          data_recebimento?: string | null
+          data_voo_ida?: string | null
           emissor?: string | null
           hora?: string | null
           id?: string
+          id_externo?: string | null
           localizador: string
           milhas_cobrado?: number | null
+          milhas_real?: number | null
           nome_operacao?: string | null
+          obs_pix?: string | null
           observacao?: string | null
           origem_venda?: string | null
           outros_cobrado?: number | null
+          outros_real?: number | null
+          pagar_facial?: string | null
           passageiros_qtd?: number | null
+          percentual_cb?: number | null
           preco_milheiro?: number | null
           preco_total?: number | null
           programa?: string | null
           reprocessar?: boolean | null
           status_pix?: string | null
           taxas_cobrado?: number | null
+          taxas_real?: number | null
           txid?: string | null
           updated_at?: string
           valor_recebido?: number | null
         }
         Update: {
+          cancelar?: boolean | null
           cartao_id?: string | null
           cliente_id?: string | null
+          codigo_la?: string | null
           conta_id?: string | null
           created_at?: string
           data_emissao?: string
+          data_pagto_facial?: string | null
+          data_recebimento?: string | null
+          data_voo_ida?: string | null
           emissor?: string | null
           hora?: string | null
           id?: string
+          id_externo?: string | null
           localizador?: string
           milhas_cobrado?: number | null
+          milhas_real?: number | null
           nome_operacao?: string | null
+          obs_pix?: string | null
           observacao?: string | null
           origem_venda?: string | null
           outros_cobrado?: number | null
+          outros_real?: number | null
+          pagar_facial?: string | null
           passageiros_qtd?: number | null
+          percentual_cb?: number | null
           preco_milheiro?: number | null
           preco_total?: number | null
           programa?: string | null
           reprocessar?: boolean | null
           status_pix?: string | null
           taxas_cobrado?: number | null
+          taxas_real?: number | null
           txid?: string | null
           updated_at?: string
           valor_recebido?: number | null
@@ -189,11 +225,120 @@ export type Database = {
           },
         ]
       }
+      emissores: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      operacoes: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      origens: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      programas: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      import_emissao: {
+        Args: {
+          p_cartao_codigo: string
+          p_cliente_codigo: string
+          p_codigo_la: string
+          p_conta_codigo: string
+          p_data_emissao: string
+          p_data_pagto_facial: string
+          p_data_recebimento: string
+          p_data_voo_ida: string
+          p_emissor: string
+          p_hora: string
+          p_id_externo: string
+          p_localizador: string
+          p_milhas_cobrado: number
+          p_milhas_real: number
+          p_nome_operacao: string
+          p_obs_pix: string
+          p_observacao: string
+          p_origem_venda: string
+          p_outros_cobrado: number
+          p_outros_real: number
+          p_pagar_facial: string
+          p_passageiros_qtd: number
+          p_percentual_cb: number
+          p_preco_milheiro: number
+          p_preco_total: number
+          p_programa: string
+          p_reprocessar: boolean
+          p_status_pix: string
+          p_taxas_cobrado: number
+          p_taxas_real: number
+          p_txid: string
+          p_valor_recebido: number
+        }
+        Returns: undefined
+      }
       is_delete_admin: { Args: never; Returns: boolean }
     }
     Enums: {
