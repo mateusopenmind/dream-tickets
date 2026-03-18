@@ -88,79 +88,115 @@ export type Database = {
       }
       emissoes: {
         Row: {
+          cancelar: boolean | null
           cartao_id: string | null
           cliente_id: string | null
+          codigo_la: string | null
           conta_id: string | null
           created_at: string
           data_emissao: string
+          data_pagto_facial: string | null
+          data_recebimento: string | null
+          data_voo_ida: string | null
           emissor: string | null
           hora: string | null
           id: string
+          id_externo: string | null
           localizador: string
           milhas_cobrado: number | null
+          milhas_real: number | null
           nome_operacao: string | null
+          obs_pix: string | null
           observacao: string | null
           origem_venda: string | null
           outros_cobrado: number | null
+          outros_real: number | null
+          pagar_facial: string | null
           passageiros_qtd: number | null
+          percentual_cb: number | null
           preco_milheiro: number | null
           preco_total: number | null
           programa: string | null
           reprocessar: boolean | null
           status_pix: string | null
           taxas_cobrado: number | null
+          taxas_real: number | null
           txid: string | null
           updated_at: string
           valor_recebido: number | null
         }
         Insert: {
+          cancelar?: boolean | null
           cartao_id?: string | null
           cliente_id?: string | null
+          codigo_la?: string | null
           conta_id?: string | null
           created_at?: string
           data_emissao: string
+          data_pagto_facial?: string | null
+          data_recebimento?: string | null
+          data_voo_ida?: string | null
           emissor?: string | null
           hora?: string | null
           id?: string
+          id_externo?: string | null
           localizador: string
           milhas_cobrado?: number | null
+          milhas_real?: number | null
           nome_operacao?: string | null
+          obs_pix?: string | null
           observacao?: string | null
           origem_venda?: string | null
           outros_cobrado?: number | null
+          outros_real?: number | null
+          pagar_facial?: string | null
           passageiros_qtd?: number | null
+          percentual_cb?: number | null
           preco_milheiro?: number | null
           preco_total?: number | null
           programa?: string | null
           reprocessar?: boolean | null
           status_pix?: string | null
           taxas_cobrado?: number | null
+          taxas_real?: number | null
           txid?: string | null
           updated_at?: string
           valor_recebido?: number | null
         }
         Update: {
+          cancelar?: boolean | null
           cartao_id?: string | null
           cliente_id?: string | null
+          codigo_la?: string | null
           conta_id?: string | null
           created_at?: string
           data_emissao?: string
+          data_pagto_facial?: string | null
+          data_recebimento?: string | null
+          data_voo_ida?: string | null
           emissor?: string | null
           hora?: string | null
           id?: string
+          id_externo?: string | null
           localizador?: string
           milhas_cobrado?: number | null
+          milhas_real?: number | null
           nome_operacao?: string | null
+          obs_pix?: string | null
           observacao?: string | null
           origem_venda?: string | null
           outros_cobrado?: number | null
+          outros_real?: number | null
+          pagar_facial?: string | null
           passageiros_qtd?: number | null
+          percentual_cb?: number | null
           preco_milheiro?: number | null
           preco_total?: number | null
           programa?: string | null
           reprocessar?: boolean | null
           status_pix?: string | null
           taxas_cobrado?: number | null
+          taxas_real?: number | null
           txid?: string | null
           updated_at?: string
           valor_recebido?: number | null
@@ -188,6 +224,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      emissores: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      operacoes: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      origens: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      programas: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
       }
     }
     Views: {
