@@ -302,6 +302,43 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      import_emissao: {
+        Args: {
+          p_cartao_codigo: string
+          p_cliente_codigo: string
+          p_codigo_la: string
+          p_conta_codigo: string
+          p_data_emissao: string
+          p_data_pagto_facial: string
+          p_data_recebimento: string
+          p_data_voo_ida: string
+          p_emissor: string
+          p_hora: string
+          p_id_externo: string
+          p_localizador: string
+          p_milhas_cobrado: number
+          p_milhas_real: number
+          p_nome_operacao: string
+          p_obs_pix: string
+          p_observacao: string
+          p_origem_venda: string
+          p_outros_cobrado: number
+          p_outros_real: number
+          p_pagar_facial: string
+          p_passageiros_qtd: number
+          p_percentual_cb: number
+          p_preco_milheiro: number
+          p_preco_total: number
+          p_programa: string
+          p_reprocessar: boolean
+          p_status_pix: string
+          p_taxas_cobrado: number
+          p_taxas_real: number
+          p_txid: string
+          p_valor_recebido: number
+        }
+        Returns: undefined
+      }
       is_delete_admin: { Args: never; Returns: boolean }
     }
     Enums: {
