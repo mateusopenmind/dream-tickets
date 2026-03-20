@@ -1,4 +1,4 @@
-import { Plane, Users, Landmark, CreditCard, LogOut } from "lucide-react";
+import { Plane, Users, Landmark, CreditCard, LogOut, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
