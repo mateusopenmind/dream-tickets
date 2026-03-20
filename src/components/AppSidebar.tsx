@@ -1,4 +1,4 @@
-import { Plane, Users, Landmark, CreditCard, LogOut } from "lucide-react";
+import { Plane, Users, Landmark, CreditCard, LogOut, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +21,7 @@ const items = [
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Contas", url: "/contas", icon: Landmark },
   { title: "Cartões", url: "/cartoes", icon: CreditCard },
+  { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {

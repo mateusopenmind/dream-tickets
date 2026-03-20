@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import ClientesPage from "./pages/ClientesPage";
 import ContasPage from "./pages/ContasPage";
 import CartoesPage from "./pages/CartoesPage";
+import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -37,6 +38,7 @@ function AppRoutes() {
         <Route path="/clientes" element={<ClientesPage />} />
         <Route path="/contas" element={<ContasPage />} />
         <Route path="/cartoes" element={<CartoesPage />} />
+        <Route path="/configuracoes" element={<ConfiguracoesPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
