@@ -11,6 +11,40 @@ type CartaoInsert = Database["public"]["Tables"]["cartoes"]["Insert"];
 type Emissao = Database["public"]["Tables"]["emissoes"]["Row"];
 type EmissaoInsert = Database["public"]["Tables"]["emissoes"]["Insert"];
 type EmissaoUpdate = Database["public"]["Tables"]["emissoes"]["Update"];
+type Programa = Database["public"]["Tables"]["programas"]["Row"];
+type Operacao = Database["public"]["Tables"]["operacoes"]["Row"];
+type Origem = Database["public"]["Tables"]["origens"]["Row"];
+type Emissor = Database["public"]["Tables"]["emissores"]["Row"];
+
+// Lookup tables
+export function useProgramas() {
+  return useQuery({ queryKey: ["programas"], queryFn: async () => {
+    const { data, error } = await supabase.from("programas").select("*").order("nome");
+    if (error) throw error;
+    return data as Programa[];
+  }});
+}
+export function useOperacoes() {
+  return useQuery({ queryKey: ["operacoes"], queryFn: async () => {
+    const { data, error } = await supabase.from("operacoes").select("*").order("nome");
+    if (error) throw error;
+    return data as Operacao[];
+  }});
+}
+export function useOrigens() {
+  return useQuery({ queryKey: ["origens"], queryFn: async () => {
+    const { data, error } = await supabase.from("origens").select("*").order("nome");
+    if (error) throw error;
+    return data as Origem[];
+  }});
+}
+export function useEmissores() {
+  return useQuery({ queryKey: ["emissores"], queryFn: async () => {
+    const { data, error } = await supabase.from("emissores").select("*").order("nome");
+    if (error) throw error;
+    return data as Emissor[];
+  }});
+}
 
 // Clientes
 export function useClientes() {
