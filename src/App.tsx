@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import ClientesPage from "./pages/ClientesPage";
 import ContasPage from "./pages/ContasPage";
 import CartoesPage from "./pages/CartoesPage";
+import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
