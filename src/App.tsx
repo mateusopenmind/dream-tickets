@@ -38,6 +38,7 @@ function AppRoutes() {
         <Route path="/clientes" element={<ClientesPage />} />
         <Route path="/contas" element={<ContasPage />} />
         <Route path="/cartoes" element={<CartoesPage />} />
+        <Route path="/configuracoes" element={<ConfiguracoesPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>

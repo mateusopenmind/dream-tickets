@@ -21,6 +21,7 @@ const items = [
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Contas", url: "/contas", icon: Landmark },
   { title: "Cartões", url: "/cartoes", icon: CreditCard },
+  { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {
