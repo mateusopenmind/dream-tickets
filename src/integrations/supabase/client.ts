@@ -5,6 +5,9 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// Diagnostico: confirma que as variaveis foram carregadas no build
+console.log("[SUPABASE] url:", SUPABASE_URL, "| key len:", SUPABASE_PUBLISHABLE_KEY ? SUPABASE_PUBLISHABLE_KEY.length : "AUSENTE");
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
