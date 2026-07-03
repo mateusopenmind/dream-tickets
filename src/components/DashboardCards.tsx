@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plane, DollarSign, AlertCircle, CalendarDays, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay } from "date-fns";
+import { startOfMonth, endOfMonth, subMonths, subDays, startOfDay, endOfDay } from "date-fns";
 
 interface DashboardCardsProps {
   emissoes: any[] | undefined;
@@ -36,9 +36,8 @@ export function DashboardCards({ emissoes }: DashboardCardsProps) {
     const mesAnteriorEnd = endOfMonth(subMonths(now, 1));
     const hojeStart = startOfDay(now);
     const hojeEnd = endOfDay(now);
-    const ontemStart = startOfDay(subMonths(now, 0));
-    ontemStart.setDate(ontemStart.getDate() - 1);
-    const ontemEnd = endOfDay(new Date(ontemStart));
+    const ontemStart = startOfDay(subDays(now, 1));
+    const ontemEnd = endOfDay(subDays(now, 1));
 
     const inRange = (d: string, s: Date, e: Date) => {
       const date = new Date(d + "T00:00:00");
@@ -48,10 +47,7 @@ export function DashboardCards({ emissoes }: DashboardCardsProps) {
     const mesAtual = emissoes.filter(e => inRange(e.data_emissao, mesAtualStart, mesAtualEnd));
     const mesAnterior = emissoes.filter(e => inRange(e.data_emissao, mesAnteriorStart, mesAnteriorEnd));
     const hoje = emissoes.filter(e => inRange(e.data_emissao, hojeStart, hojeEnd));
-    const ontem = emissoes.filter(e => {
-      const date = new Date(e.data_emissao + "T00:00:00");
-      return date >= ontemStart && date <= ontemEnd;
-    });
+    const ontem = emissoes.filter(e => inRange(e.data_emissao, ontemStart, ontemEnd));
 
     const sum = (arr: any[]) => arr.reduce((a, e) => a + (e.preco_total || 0), 0);
     const pixAberto = (arr: any[]) => arr.filter(e => e.status_pix === "EM ABERTO");
@@ -84,8 +80,9 @@ export function DashboardCards({ emissoes }: DashboardCardsProps) {
       value: stats.totalEmissoesMes.toString(),
       subtitle: `${stats.totalEmissoes} total`,
       icon: Plane,
-      iconColor: "text-primary",
-      iconBg: "bg-primary/10",
+      tone: "bg-pastel-rose",
+      iconColor: "text-white",
+      iconBg: "bg-pastel-rose-fg",
       trend: <TrendBadge current={stats.totalEmissoesMes} previous={stats.totalEmissoesMesAnterior} label="mês" />,
     },
     {
@@ -93,26 +90,29 @@ export function DashboardCards({ emissoes }: DashboardCardsProps) {
       value: formatCurrency(stats.valorTotalMes),
       subtitle: `Hoje: ${formatCurrency(stats.valorHoje)}`,
       icon: DollarSign,
-      iconColor: "text-success",
-      iconBg: "bg-success/10",
+      tone: "bg-pastel-green",
+      iconColor: "text-white",
+      iconBg: "bg-pastel-green-fg",
       trend: <TrendBadge current={stats.valorTotalMes} previous={stats.valorTotalMesAnterior} label="mês" />,
     },
     {
-      title: "Pix em Aberto",
+      title: "Cobrança em Aberto",
       value: formatCurrency(stats.pixAbertoValor),
       subtitle: `${stats.pixAbertoCount} pendentes`,
       icon: AlertCircle,
-      iconColor: "text-warning",
-      iconBg: "bg-warning/10",
+      tone: "bg-pastel-peach",
+      iconColor: "text-white",
+      iconBg: "bg-pastel-peach-fg",
       trend: <TrendBadge current={stats.pixAbertoMes} previous={stats.pixAbertoMesAnterior} label="mês" />,
     },
     {
       title: "Emissões Hoje",
       value: stats.emissoesDia.toString(),
-      subtitle: `Pix hoje: ${formatCurrency(stats.pixHoje)}`,
+      subtitle: `Cobranças hoje: ${formatCurrency(stats.pixHoje)}`,
       icon: CalendarDays,
-      iconColor: "text-primary",
-      iconBg: "bg-primary/10",
+      tone: "bg-pastel-lilac",
+      iconColor: "text-white",
+      iconBg: "bg-pastel-lilac-fg",
       trend: <TrendBadge current={stats.emissoesDia} previous={stats.emissoesOntem} label="dia" />,
     },
   ];
@@ -120,17 +120,17 @@ export function DashboardCards({ emissoes }: DashboardCardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {cards.map((card) => (
-        <Card key={card.title}>
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1 min-w-0">
-                <p className="text-sm text-muted-foreground">{card.title}</p>
-                <p className="text-2xl font-display font-bold truncate">{card.value}</p>
-                <p className="text-xs text-muted-foreground">{card.subtitle}</p>
-                <div className="pt-1">{card.trend}</div>
-              </div>
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${card.iconBg}`}>
+        <Card key={card.title} className={`border-0 shadow-card ${card.tone}`}>
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-3">
+              <div className={`flex h-11 w-11 items-center justify-center rounded-full ${card.iconBg}`}>
                 <card.icon className={`h-5 w-5 ${card.iconColor}`} />
+              </div>
+              <div className="space-y-0.5 min-w-0">
+                <p className="text-2xl font-display font-bold truncate text-foreground">{card.value}</p>
+                <p className="text-sm font-medium text-foreground/70">{card.title}</p>
+                <p className="text-xs text-foreground/50">{card.subtitle}</p>
+                <div className="pt-1">{card.trend}</div>
               </div>
             </div>
           </CardContent>
