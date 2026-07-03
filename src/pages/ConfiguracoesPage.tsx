@@ -5,39 +5,54 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
+import { SortableHead } from "@/components/ui/sortable-head";
+import { useSort } from "@/hooks/useSort";
+import { useSearch } from "@/hooks/useSearch";
+import { SearchBar } from "@/components/ui/search-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Plus, Pencil, Trash2, Settings } from "lucide-react";
 import { toast } from "sonner";
+import { usePodeExcluir } from "@/hooks/usePerfil";
 
 type LookupTable = "programas" | "operacoes" | "origens" | "emissores";
 
 interface LookupItem {
   id: string;
   nome: string;
+  observacao?: string | null;
 }
 
 function LookupCrud({ table, queryKey, items, isLoading }: { table: LookupTable; queryKey: string; items: LookupItem[] | undefined; isLoading: boolean }) {
   const qc = useQueryClient();
+  const podeExcluir = usePodeExcluir();
+  const temObs = table === "programas"; // só programas têm observação
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<LookupItem | null>(null);
   const [nome, setNome] = useState("");
+  const [obs, setObs] = useState("");
   const [saving, setSaving] = useState(false);
+  const { query, setQuery, filtered } = useSearch<LookupItem>(items, ["nome"]);
+  const { sorted, key, dir, toggle } = useSort<LookupItem>(filtered, "nome");
 
-  const openNew = () => { setEditing(null); setNome(""); setDialogOpen(true); };
-  const openEdit = (item: LookupItem) => { setEditing(item); setNome(item.nome); setDialogOpen(true); };
+  const openNew = () => { setEditing(null); setNome(""); setObs(""); setDialogOpen(true); };
+  const openEdit = (item: LookupItem) => { setEditing(item); setNome(item.nome); setObs(item.observacao ?? ""); setDialogOpen(true); };
 
   const handleSave = async () => {
     if (!nome.trim()) { toast.error("Nome é obrigatório"); return; }
     setSaving(true);
     try {
+      const payload: any = { nome: nome.trim() };
+      if (temObs) payload.observacao = obs.trim() || null;
       if (editing) {
-        const { error } = await supabase.from(table).update({ nome: nome.trim() }).eq("id", editing.id);
+        const { error } = await supabase.from(table).update(payload).eq("id", editing.id);
         if (error) throw error;
         toast.success("Atualizado com sucesso");
       } else {
-        const { error } = await supabase.from(table).insert({ nome: nome.trim() });
+        const { error } = await supabase.from(table).insert(payload);
         if (error) throw error;
         toast.success("Adicionado com sucesso");
       }
@@ -63,8 +78,9 @@ function LookupCrud({ table, queryKey, items, isLoading }: { table: LookupTable;
   };
 
   return (
-    <div>
-      <div className="flex justify-end mb-4">
+    <div className="max-w-2xl">
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <SearchBar value={query} onChange={setQuery} placeholder="Pesquisar..." />
         <Button onClick={openNew} size="sm">
           <Plus className="h-4 w-4 mr-1" /> Adicionar
         </Button>
@@ -73,36 +89,42 @@ function LookupCrud({ table, queryKey, items, isLoading }: { table: LookupTable;
       {isLoading ? (
         <p className="text-muted-foreground text-sm">Carregando...</p>
       ) : (
+        <Card className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
+              <SortableHead label="Nome" sortKey="nome" activeKey={key} dir={dir} onSort={toggle} />
+              {temObs && <TableHead>Observação</TableHead>}
               <TableHead className="w-24 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items?.map((item) => (
+            {sorted.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.nome}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="py-2 font-medium">{item.nome}</TableCell>
+                {temObs && <TableCell className="py-2 text-sm text-muted-foreground max-w-md truncate" title={item.observacao ?? ""}>{item.observacao || "—"}</TableCell>}
+                <TableCell className="text-right py-2">
                   <div className="flex justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {podeExcluir && (
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
             ))}
             {(!items || items.length === 0) && (
               <TableRow>
-                <TableCell colSpan={2} className="text-center text-muted-foreground">Nenhum item cadastrado</TableCell>
+                <TableCell colSpan={temObs ? 3 : 2} className="text-center text-muted-foreground">Nenhum item cadastrado</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+        </Card>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -111,8 +133,17 @@ function LookupCrud({ table, queryKey, items, isLoading }: { table: LookupTable;
             <DialogTitle>{editing ? "Editar" : "Novo"} item</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <Label>Nome</Label>
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome" autoFocus />
+            <div className="grid gap-1.5">
+              <Label>Nome</Label>
+              <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome" autoFocus />
+            </div>
+            {temObs && (
+              <div className="grid gap-1.5">
+                <Label>Observação</Label>
+                <Textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={4} placeholder="Detalhes/lembretes do programa: regras, prazos, particularidades..." />
+                <p className="text-xs text-muted-foreground">Uso interno — fica registrado para consulta futura no cadastro do programa.</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
