@@ -58,11 +58,21 @@ export function useUpsertCliente() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (c: ClienteInsert & { id?: string }) => {
+      const payload = {
+        codigo: c.codigo, nome_fantasia: c.nome_fantasia, razao_social: c.razao_social ?? null,
+        cnpj_cpf: c.cnpj_cpf ?? null, cep: c.cep ?? null, endereco: c.endereco ?? null,
+        contato: c.contato ?? null, fone: c.fone ?? null, email: c.email ?? null,
+        origem: c.origem ?? null, grupo: c.grupo ?? null,
+        tipo_pessoa: c.tipo_pessoa ?? null, logradouro: c.logradouro ?? null, numero: c.numero ?? null,
+        complemento: c.complemento ?? null, bairro: c.bairro ?? null, municipio: c.municipio ?? null,
+        uf: c.uf ?? null, codigo_ibge: c.codigo_ibge ?? null,
+        inscricao_municipal: c.inscricao_municipal ?? null, inscricao_estadual: c.inscricao_estadual ?? null,
+      };
       if (c.id) {
-        const { error } = await supabase.from("clientes").update({ codigo: c.codigo, nome_fantasia: c.nome_fantasia }).eq("id", c.id);
+        const { error } = await supabase.from("clientes").update(payload).eq("id", c.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("clientes").insert({ codigo: c.codigo, nome_fantasia: c.nome_fantasia });
+        const { error } = await supabase.from("clientes").insert(payload);
         if (error) throw error;
       }
     },
@@ -88,16 +98,39 @@ export function useContas() {
     return data as Conta[];
   }});
 }
+
+// Programas vinculados a cada conta: { [conta_id]: Set<nome_programa> }
+export function useContaProgramas() {
+  return useQuery({ queryKey: ["conta-programas-map"], queryFn: async () => {
+    // só programas ATIVOS aparecem na emissão (inativos mantêm saldo mas não são ofertados)
+    const { data, error } = await supabase.from("conta_programas").select("conta_id, ativo, programas(nome)").eq("ativo", true).limit(5000);
+    if (error) throw error;
+    const map: Record<string, Set<string>> = {};
+    (data ?? []).forEach((r: any) => {
+      const nome = (r.programas as any)?.nome;
+      if (!nome) return;
+      (map[r.conta_id] ||= new Set()).add(nome);
+    });
+    return map;
+  }});
+}
 export function useUpsertConta() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (c: ContaInsert & { id?: string }) => {
+    mutationFn: async (c: ContaInsert & { id?: string; numero_smiles?: string }) => {
+      const payload = {
+        codigo: c.codigo, nome: c.nome, nascimento: c.nascimento || null, cpf: c.cpf ?? null,
+        fone: c.fone ?? null, email: c.email ?? null, tipo: c.tipo ?? null, pix_envio: c.pix_envio ?? null,
+        numero_smiles: (c as any).numero_smiles ?? null,
+      };
       if (c.id) {
-        const { error } = await supabase.from("contas").update({ codigo: c.codigo, nome: c.nome }).eq("id", c.id);
+        const { data, error } = await supabase.from("contas").update(payload).eq("id", c.id).select("id").single();
         if (error) throw error;
+        return data;
       } else {
-        const { error } = await supabase.from("contas").insert({ codigo: c.codigo, nome: c.nome });
+        const { data, error } = await supabase.from("contas").insert(payload).select("id").single();
         if (error) throw error;
+        return data;
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contas"] }),
@@ -126,11 +159,18 @@ export function useUpsertCartao() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (c: CartaoInsert & { id?: string }) => {
+      const payload = {
+        codigo: c.codigo, nome: c.nome, bandeira: c.bandeira ?? null, titular: c.titular ?? null,
+        cpf_cnpj: c.cpf_cnpj ?? null,
+        dia_fechamento: c.dia_fechamento ? Number(c.dia_fechamento) : null,
+        dia_vencimento: c.dia_vencimento ? Number(c.dia_vencimento) : null,
+        limite: c.limite ? Number(c.limite) : null,
+      };
       if (c.id) {
-        const { error } = await supabase.from("cartoes").update({ codigo: c.codigo, nome: c.nome }).eq("id", c.id);
+        const { error } = await supabase.from("cartoes").update(payload).eq("id", c.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("cartoes").insert({ codigo: c.codigo, nome: c.nome });
+        const { error } = await supabase.from("cartoes").insert(payload);
         if (error) throw error;
       }
     },
@@ -169,12 +209,14 @@ export function useUpsertEmissao() {
       delete payload.cartoes;
       if (e.id) {
         const { id, ...rest } = payload;
-        const { error } = await supabase.from("emissoes").update(rest as EmissaoUpdate).eq("id", id);
+        const { data, error } = await supabase.from("emissoes").update(rest as EmissaoUpdate).eq("id", id).select("*, clientes(codigo,nome_fantasia), contas(codigo,nome), cartoes(codigo,nome)").single();
         if (error) throw error;
+        return data;
       } else {
         delete payload.id;
-        const { error } = await supabase.from("emissoes").insert(payload);
+        const { data, error } = await supabase.from("emissoes").insert(payload).select("*, clientes(codigo,nome_fantasia), contas(codigo,nome), cartoes(codigo,nome)").single();
         if (error) throw error;
+        return data;
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["emissoes"] }),
