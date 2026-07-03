@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,67 +7,94 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "@/components/ui/sonner";
 import { Plane, Loader2 } from "lucide-react";
 
-function formatPhone(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 2) return `(${digits}`;
-  if (digits.length <= 7) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
-  return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+// Captcha (Cloudflare Turnstile): só é exibido/exigido quando VITE_TURNSTILE_SITE_KEY
+// estiver definida no .env. Para valer no backend, ativar também em
+// Supabase → Auth → Settings → Bot and Abuse Protection (colar a Secret Key do Turnstile).
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+
+declare global {
+  interface Window { turnstile?: any }
 }
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HTMLDivElement>(null);
+  const widgetId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return;
+    const render = () => {
+      if (window.turnstile && captchaRef.current && widgetId.current === null) {
+        widgetId.current = window.turnstile.render(captchaRef.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token: string) => setCaptchaToken(token),
+          "expired-callback": () => setCaptchaToken(null),
+        });
+      }
+    };
+    if (window.turnstile) { render(); return; }
+    const s = document.createElement("script");
+    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    s.async = true;
+    s.onload = render;
+    document.head.appendChild(s);
+  }, []);
+
+  // Registra a tentativa de login (sucesso ou falha) para monitoramento de acessos indevidos.
+  const registrarTentativa = (sucesso: boolean) => {
+    try {
+      supabase.functions.invoke("registrar-login", { body: { email, sucesso } }).catch(() => {});
+    } catch { /* monitoramento nunca bloqueia o login */ }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      toast.error("Confirme a verificação de segurança antes de entrar.");
+      return;
+    }
     setLoading(true);
-
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Login realizado com sucesso!");
-      } else {
-        const phoneDigits = phone.replace(/\D/g, "");
-        if (phoneDigits.length < 10 || phoneDigits.length > 11) {
-          toast.error("Telefone inválido. Use o formato (54)99917-6040");
-          setLoading(false);
-          return;
-        }
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: { phone: phoneDigits, first_name: firstName, last_name: lastName },
-          },
-        });
-        if (error) throw error;
-        toast.success("Cadastro realizado com sucesso!");
-      }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        ...(TURNSTILE_SITE_KEY && captchaToken ? { options: { captchaToken } } : {}),
+      });
+      if (error) throw error;
+      if (data?.session) { registrarTentativa(true); toast.success("Login realizado com sucesso!"); }
     } catch (error: any) {
-      toast.error(error.message || "Erro ao autenticar");
+      registrarTentativa(false);
+      // Log completo no console para diagnostico
+      console.error("[LOGIN] erro:", error);
+      const msg =
+        error?.message ||
+        error?.error_description ||
+        error?.name ||
+        (error?.status ? `HTTP ${error.status}` : null) ||
+        "Falha de conexao com o servidor. Verifique a internet/credenciais.";
+      toast.error(`Erro: ${msg}`);
+      // Turnstile: token é de uso único — renova o desafio após falha.
+      if (TURNSTILE_SITE_KEY && window.turnstile && widgetId.current !== null) {
+        window.turnstile.reset(widgetId.current);
+        setCaptchaToken(null);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent via-background to-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Plane className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-2xl">MilesControl</CardTitle>
-          <CardDescription>
-            {isLogin ? "Faça login para acessar o sistema" : "Crie sua conta para começar"}
-          </CardDescription>
+          <CardTitle className="text-2xl">DreamTickets</CardTitle>
+          <CardDescription>Faça login para acessar o sistema</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -94,58 +121,15 @@ export default function AuthPage() {
                 minLength={6}
               />
             </div>
-            {!isLogin && (
-              <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">Nome</Label>
-                    <Input
-                      id="firstName"
-                      placeholder="Bruno"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Sobrenome</Label>
-                    <Input
-                      id="lastName"
-                      placeholder="Silva"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone (com DDD)</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="(54)99917-6040"
-                    value={phone}
-                    onChange={(e) => setPhone(formatPhone(e.target.value))}
-                    required
-                  />
-                </div>
-              </>
-            )}
+            {TURNSTILE_SITE_KEY && <div ref={captchaRef} className="flex justify-center" />}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLogin ? "Entrar" : "Cadastrar"}
+              Entrar
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            {isLogin ? "Não tem uma conta?" : "Já tem uma conta?"}{" "}
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary hover:underline font-medium"
-            >
-              {isLogin ? "Cadastre-se" : "Faça login"}
-            </button>
-          </div>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Acesso restrito. Novos usuários são cadastrados pelo administrador.
+          </p>
         </CardContent>
       </Card>
     </div>
