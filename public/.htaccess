@@ -1,0 +1,21 @@
+# SPA fallback - obrigatorio para rotas como /pix/* funcionarem em acesso direto
+RewriteEngine On
+RewriteBase /
+
+# Nao reescrever o desafio do Let's Encrypt (emissao/renovacao do SSL)
+RewriteRule ^\.well-known/ - [L]
+
+RewriteRule ^index\.html$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]
+
+# Cache: assets com hash por 1 ano; index.html sempre revalida
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|woff2?|png|jpg|jpeg|svg|webp)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "index\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

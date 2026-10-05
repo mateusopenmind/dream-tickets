@@ -1,0 +1,54 @@
+name: Publicar app (Locaweb)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: publicar
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci || npm install
+
+      - name: Build
+        env:
+          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        run: npm run build
+
+      # Metodo 1: SSH/rsync (preferido) - ative com a Repository Variable DEPLOY_METHOD=ssh
+      # Secrets: SSH_HOST, SSH_USER, SSH_PASSWORD (e opcional SSH_PORT)
+      - name: Deploy via SSH (rsync)
+        if: ${{ vars.DEPLOY_METHOD == 'ssh' }}
+        env:
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass rsync
+          sshpass -e rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT || '22' }}" \
+            dist/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:public_html/app/"
+
+      # Metodo 2: FTP (padrao) - Secrets: FTP_HOST, FTP_USER, FTP_PASSWORD
+      - name: Deploy via FTP
+        if: ${{ vars.DEPLOY_METHOD != 'ssh' }}
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: dist/
+          server-dir: public_html/app/
