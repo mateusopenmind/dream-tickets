@@ -1,0 +1,4 @@
+project_id = "lrrsgguqhitrnhoncisj"
+
+[functions.n8n-api]
+verify_jwt = false
