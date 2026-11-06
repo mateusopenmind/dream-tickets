@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Grotesk:wght@300..700&display=swap');
+
+@layer base {
+  /* ===== TEMA CLARO (índigo + off-white) — ref. OpenMind ===== */
+  :root {
+    --background: 220 20% 98%;
+    --foreground: 222 35% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 35% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 35% 15%;
+    --primary: 245 75% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 16% 95%;
+    --secondary-foreground: 222 30% 25%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 245 75% 95%;
+    --accent-foreground: 245 60% 42%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 16% 90%;
+    --input: 220 16% 92%;
+    --ring: 245 75% 60%;
+    --radius: 0.75rem;
+
+    --success: 145 65% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 100%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 30% 35%;
+    --sidebar-primary: 245 75% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 245 75% 95%;
+    --sidebar-accent-foreground: 245 60% 42%;
+    --sidebar-border: 220 16% 92%;
+    --sidebar-ring: 245 75% 60%;
+
+    /* tons pastel dos cards de metrica */
+    --pastel-rose: 352 96% 94%;   --pastel-rose-fg: 352 70% 55%;
+    --pastel-peach: 32 100% 92%;  --pastel-peach-fg: 28 80% 55%;
+    --pastel-green: 152 60% 90%;  --pastel-green-fg: 152 52% 42%;
+    --pastel-lilac: 245 90% 95%;  --pastel-lilac-fg: 245 60% 60%;
+  }
+
+  /* ===== TEMA ESCURO (laranja + azul-escuro) — ref. OpenMind ===== */
+  .dark {
+    --background: 220 20% 7%;
+    --foreground: 210 20% 92%;
+    --card: 220 18% 10%;
+    --card-foreground: 210 20% 92%;
+    --popover: 220 18% 12%;
+    --popover-foreground: 210 20% 92%;
+    --primary: 32 95% 55%;
+    --primary-foreground: 220 20% 7%;
+    --secondary: 220 15% 16%;
+    --secondary-foreground: 210 20% 85%;
+    --muted: 220 15% 14%;
+    --muted-foreground: 215 15% 55%;
+    --accent: 220 15% 18%;
+    --accent-foreground: 32 95% 60%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 32 95% 55%;
+    --radius: 0.75rem;
+
+    --success: 145 70% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 40 90% 55%;
+    --warning-foreground: 220 20% 7%;
+
+    --sidebar-background: 220 18% 10%;
+    --sidebar-foreground: 210 20% 85%;
+    --sidebar-primary: 32 95% 55%;
+    --sidebar-primary-foreground: 220 20% 7%;
+    --sidebar-accent: 220 15% 16%;
+    --sidebar-accent-foreground: 32 95% 60%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 32 95% 55%;
+
+    --pastel-rose: 352 40% 18%;   --pastel-rose-fg: 352 80% 72%;
+    --pastel-peach: 28 45% 16%;   --pastel-peach-fg: 32 90% 60%;
+    --pastel-green: 152 35% 15%;  --pastel-green-fg: 152 55% 60%;
+    --pastel-lilac: 245 35% 20%;  --pastel-lilac-fg: 245 70% 75%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 { font-family: 'Space Grotesk', sans-serif; }
+}
