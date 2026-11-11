@@ -672,6 +672,8 @@ function ProgramasEmissaoCrud() {
   const [saving, setSaving] = useState(false);
   // Flags das regras de emissão deste programa (uma por coluna regra_* de `programas`).
   const [regras, setRegras] = useState<Record<string, boolean>>({});
+  // Valor (R$) pago por emissão com facial — fica ao lado da chave "Pagar facial?" na aba Regras.
+  const [valorFacial, setValorFacial] = useState(0);
 
   // Moedas estrangeiras que este programa aceita (ids de `moedas`).
   const { data: moedasCad } = useMoedas();
@@ -689,8 +691,8 @@ function ProgramasEmissaoCrud() {
     setMoedasSel(((data ?? []) as any[]).map((r) => r.moeda_id));
   };
 
-  const openNew = () => { setEditing(null); setNome(""); setObs(""); setEstoqueId(""); setUsarEmissoes(true); setRegras(regrasPadrao()); setMoedasSel([]); setDialogOpen(true); };
-  const openEdit = (p: any) => { setEditing(p); setNome(p.nome); setObs(p.observacao ?? ""); setEstoqueId(p.programa_estoque_id ?? ""); setUsarEmissoes(p.usar_nas_emissoes !== false); setRegras(regrasDo(p)); carregarMoedas(p.id); setDialogOpen(true); };
+  const openNew = () => { setEditing(null); setNome(""); setObs(""); setEstoqueId(""); setUsarEmissoes(true); setRegras(regrasPadrao()); setValorFacial(0); setMoedasSel([]); setDialogOpen(true); };
+  const openEdit = (p: any) => { setEditing(p); setNome(p.nome); setObs(p.observacao ?? ""); setEstoqueId(p.programa_estoque_id ?? ""); setUsarEmissoes(p.usar_nas_emissoes !== false); setRegras(regrasDo(p)); setValorFacial(Number(p.valor_facial) || 0); carregarMoedas(p.id); setDialogOpen(true); };
 
   // Reescreve o vínculo programa x moedas: apaga o que saiu, insere o que entrou.
   const salvarMoedas = async (programaId: string) => {
@@ -716,9 +718,18 @@ function ProgramasEmissaoCrud() {
       toast.error('Este programa não aceita reais e não tem moeda cadastrada — o emissor ficaria sem opção. Marque ao menos uma moeda na aba "Moedas" ou volte a aceitar reais.');
       return;
     }
+    // Facial ligado sem valor: a emissão entraria em Pagamento Facial sem ter quanto pagar.
+    if (regras["regra_facial"] === true && !(valorFacial > 0)) {
+      toast.error('A regra "Pagar facial?" está ligada — informe o valor do facial (R$) ao lado da chave, na aba "Regras".');
+      return;
+    }
     setSaving(true);
     try {
-      const payload: any = { nome: nome.trim(), observacao: obs.trim() || null, programa_estoque_id: estoqueId || null, usar_nas_emissoes: usarEmissoes, ...regras };
+      const payload: any = {
+        nome: nome.trim(), observacao: obs.trim() || null, programa_estoque_id: estoqueId || null, usar_nas_emissoes: usarEmissoes, ...regras,
+        // Mantém o valor guardado mesmo com a regra desligada (religar não obriga a digitar de novo).
+        valor_facial: valorFacial > 0 ? Math.round(valorFacial * 100) / 100 : null,
+      };
       let programaId = editing?.id;
       if (editing) {
         const { error } = await (supabase as any).from("programas").update(payload).eq("id", editing.id);
@@ -858,11 +869,25 @@ function ProgramasEmissaoCrud() {
                             <Label className="cursor-default">{r.titulo}</Label>
                             <p className="text-xs text-muted-foreground mt-0.5">{r.descricao}</p>
                           </div>
-                          <Switch
-                            className="mt-0.5 shrink-0"
-                            checked={regras[r.coluna] === true}
-                            onCheckedChange={(v) => setRegras((s) => ({ ...s, [r.coluna]: v }))}
-                          />
+                          <div className="flex items-center gap-2 shrink-0">
+                            {/* "Pagar facial?" leva junto o valor pago por emissão neste programa. */}
+                            {r.key === "facial" && regras[r.coluna] === true && (
+                              <div className="w-28">
+                                <NumericInput
+                                  value={valorFacial}
+                                  onChange={setValorFacial}
+                                  decimal
+                                  prefix="R$"
+                                  error={!(valorFacial > 0)}
+                                />
+                              </div>
+                            )}
+                            <Switch
+                              className="mt-0.5 shrink-0"
+                              checked={regras[r.coluna] === true}
+                              onCheckedChange={(v) => setRegras((s) => ({ ...s, [r.coluna]: v }))}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>

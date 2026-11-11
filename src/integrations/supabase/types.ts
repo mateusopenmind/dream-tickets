@@ -599,6 +599,7 @@ export type Database = {
           outros_real: number | null
           owner_id: string
           pagar_facial: string | null
+          valor_facial: number | null
           passageiros_qtd: number | null
           percentual_cb: number | null
           pix_banco: string | null
@@ -706,6 +707,7 @@ export type Database = {
           outros_real?: number | null
           owner_id?: string
           pagar_facial?: string | null
+          valor_facial?: number | null
           passageiros_qtd?: number | null
           percentual_cb?: number | null
           pix_banco?: string | null
@@ -813,6 +815,7 @@ export type Database = {
           outros_real?: number | null
           owner_id?: string
           pagar_facial?: string | null
+          valor_facial?: number | null
           passageiros_qtd?: number | null
           percentual_cb?: number | null
           pix_banco?: string | null
@@ -1697,6 +1700,7 @@ export type Database = {
           regra_percentual_cb: boolean
           regra_taxa_queima_cpf: boolean
           usar_nas_emissoes: boolean
+          valor_facial: number | null
         }
         Insert: {
           regra_aceita_reais?: boolean
@@ -1719,6 +1723,7 @@ export type Database = {
           regra_percentual_cb?: boolean
           regra_taxa_queima_cpf?: boolean
           usar_nas_emissoes?: boolean
+          valor_facial?: number | null
         }
         Update: {
           regra_aceita_reais?: boolean
@@ -1741,6 +1746,7 @@ export type Database = {
           regra_percentual_cb?: boolean
           regra_taxa_queima_cpf?: boolean
           usar_nas_emissoes?: boolean
+          valor_facial?: number | null
         }
         Relationships: []
       }

@@ -63,7 +63,7 @@ export const REGRAS: RegraDef[] = [
     key: "facial",
     coluna: "regra_facial",
     titulo: "Pagar facial?",
-    descricao: "Mostra o Sim/Não de biometria facial. As emissões marcadas como Sim aparecem na tela Pagamento Facial.",
+    descricao: "Mostra o Sim/Não de biometria facial. As emissões marcadas como Sim aparecem na tela Pagamento Facial. Ao ligar, informe ao lado o valor (R$) pago por emissão neste programa — ele é gravado na emissão no lançamento; mudar o valor depois não altera as emissões já lançadas.",
     grupo: "Campos da Emissão",
   },
   {

@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { NumericInput } from "@/components/ui/numeric-input";
 import { SearchSelect } from "@/components/ui/search-select";
 import { SearchBar } from "@/components/ui/search-bar";
 import { AjudaButton } from "@/components/AjudaButton";
@@ -23,7 +22,10 @@ import { contar } from "@/lib/plural";
 import { SortableHead } from "@/components/ui/sortable-head";
 import { useSort } from "@/hooks/useSort";
 
-const VALOR_FACIAL_PADRAO = 20;
+// O valor do facial vem de cada emissão (emissoes.valor_facial, copiado do cadastro do programa
+// no lançamento — Configurações > Programas > aba Regras). Os R$20 abaixo só servem para exibir
+// os pagos antigos da importação, que guardam "Sim" em pagar_facial em vez do valor.
+const VALOR_FACIAL_LEGADO = 20;
 // Máximo de pagamentos que o banco aceita num lote — "Marcar 20" seleciona exatamente essa quantidade.
 const LIMITE_LOTE_BANCO = 20;
 
@@ -38,6 +40,7 @@ interface LinhaFacial {
   conta_nome: string;
   pago: boolean;
   pagar_facial: number | null;
+  valor_facial: number | null;
   data_pagto_facial: string | null;
   banco_pagamento_facial: string | null;
 }
@@ -52,7 +55,6 @@ export default function PagamentoFacialPage() {
   const [confirm, setConfirm] = useState(false);
   const [reverter, setReverter] = useState(false);
   const [revertendo, setRevertendo] = useState(false);
-  const [valor, setValor] = useState(VALOR_FACIAL_PADRAO);
   const [dataPgto, setDataPgto] = useState(() => new Date().toISOString().slice(0, 10));
   const [banco, setBanco] = useState("Sicredi");
 
@@ -61,7 +63,7 @@ export default function PagamentoFacialPage() {
     queryFn: async (): Promise<LinhaFacial[]> => {
       const { data, error } = await supabase
         .from("emissoes")
-        .select("id, id_emissao, data_emissao, localizador, programa, facial_pago, pagar_facial, data_pagto_facial, banco_pagamento_facial, conta_id, contas(codigo, nome)")
+        .select("id, id_emissao, data_emissao, localizador, programa, facial_pago, pagar_facial, valor_facial, data_pagto_facial, banco_pagamento_facial, conta_id, contas(codigo, nome)")
         .eq("facial", true)
         .order("data_emissao", { ascending: false })
         .limit(5000);
@@ -77,6 +79,7 @@ export default function PagamentoFacialPage() {
         conta_nome: (e.contas as any)?.nome ?? "—",
         pago: !!e.facial_pago,
         pagar_facial: e.pagar_facial,
+        valor_facial: e.valor_facial != null ? Number(e.valor_facial) : null,
         data_pagto_facial: e.data_pagto_facial,
         banco_pagamento_facial: e.banco_pagamento_facial,
       }));
@@ -106,6 +109,16 @@ export default function PagamentoFacialPage() {
     });
   }, [presas]);
 
+  // Valor da linha. Pendente: o do programa, gravado na emissão (null = programa sem valor cadastrado).
+  // Pago: o que foi efetivamente pago (pagar_facial); os antigos com "Sim" caem no valor da emissão.
+  const valorDaLinha = (l: LinhaFacial): number | null => {
+    if (l.pago) {
+      const n = Number(l.pagar_facial);
+      return Number.isFinite(n) && n > 0 ? n : (l.valor_facial ?? VALOR_FACIAL_LEGADO);
+    }
+    return l.valor_facial != null && l.valor_facial > 0 ? l.valor_facial : null;
+  };
+
   // filtra por status (pendentes/pagos) e busca
   const filtradas = useMemo(() => {
     let list = (linhas ?? []).filter((l) => (verPagos ? l.pago : !l.pago));
@@ -122,7 +135,7 @@ export default function PagamentoFacialPage() {
 
   // Ordenação das colunas: ordena as linhas ANTES de agrupar — as contas continuam por código e,
   // dentro de cada conta, as emissões seguem a coluna clicada. Seleção/totais usam `filtradas`.
-  const filtradasSort = useMemo(() => filtradas.map((l: any) => ({ ...l, _sValor: Number(l.pagar_facial) || 0 })), [filtradas]);
+  const filtradasSort = useMemo(() => filtradas.map((l: any) => ({ ...l, _sValor: valorDaLinha(l) ?? 0 })), [filtradas]);
   const { sorted: filtradasOrdenadas, key: sKey, dir: sDir, toggle: sToggle } = useSort<any>(filtradasSort, null);
 
   // agrupa por conta (código + nome), mantendo ordem por código
@@ -140,8 +153,24 @@ export default function PagamentoFacialPage() {
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(grupos, 100);
 
-  const totalPendentes = (linhas ?? []).filter((l) => !l.pago).length;
-  const valorPendente = totalPendentes * VALOR_FACIAL_PADRAO;
+  const pendentes = (linhas ?? []).filter((l) => !l.pago);
+  const totalPendentes = pendentes.length;
+  const valorPendente = pendentes.reduce((t, l) => t + (valorDaLinha(l) ?? 0), 0);
+  const pendentesSemValor = pendentes.filter((l) => valorDaLinha(l) == null).length;
+
+  // "3 × R$ 20,00 (Latam) + 2 × R$ 10,00 (Smiles)" — usado no card e no modal de pagamento.
+  const composicao = (itens: LinhaFacial[]) => {
+    const m = new Map<string, { programa: string; valor: number; qtd: number }>();
+    for (const l of itens) {
+      const v = valorDaLinha(l) ?? 0;
+      const k = `${l.programa ?? ""}|${v}`;
+      if (!m.has(k)) m.set(k, { programa: l.programa ?? "—", valor: v, qtd: 0 });
+      m.get(k)!.qtd++;
+    }
+    return Array.from(m.values()).sort((a, b) => a.programa.localeCompare(b.programa, "pt-BR"));
+  };
+  const selecionadas = useMemo(() => (linhas ?? []).filter((l) => sel.has(l.id)), [linhas, sel]);
+  const totalSelecionado = selecionadas.reduce((t, l) => t + (valorDaLinha(l) ?? 0), 0);
 
   // Marcar tudo de uma vez: pega a lista INTEIRA que o filtro esta mostrando, nao so a
   // pagina aberta — quem clica aqui quer "todas", e achar que marcou todas tendo marcado
@@ -181,7 +210,11 @@ export default function PagamentoFacialPage() {
 
   const abrirPagamento = () => {
     if (sel.size === 0) { toast.error("Selecione ao menos uma emissão."); return; }
-    setValor(VALOR_FACIAL_PADRAO);
+    const semValor = selecionadas.filter((l) => valorDaLinha(l) == null);
+    if (semValor.length > 0) {
+      toast.error(`Sem valor de facial: ${semValor.map((l) => l.id_emissao || l.localizador).join(", ")}. Cadastre o valor do programa em Configurações → Programas → aba Regras.`);
+      return;
+    }
     setDataPgto(new Date().toISOString().slice(0, 10));
     setBanco("Sicredi");
     setConfirm(true);
@@ -191,11 +224,20 @@ export default function PagamentoFacialPage() {
     setPagando(true);
     try {
       const ids = Array.from(sel);
-      const { error } = await supabase
-        .from("emissoes")
-        .update({ facial_pago: true, pagar_facial: Math.round(valor), data_pagto_facial: dataPgto, banco_pagamento_facial: banco })
-        .in("id", ids);
-      if (error) throw error;
+      // Cada emissão é paga pelo valor dela — um update por valor (Latam R$20, Smiles R$10...).
+      const porValor = new Map<number, string[]>();
+      for (const l of selecionadas) {
+        const v = valorDaLinha(l)!;
+        if (!porValor.has(v)) porValor.set(v, []);
+        porValor.get(v)!.push(l.id);
+      }
+      for (const [v, idsDoValor] of porValor) {
+        const { error } = await supabase
+          .from("emissoes")
+          .update({ facial_pago: true, pagar_facial: String(v), data_pagto_facial: dataPgto, banco_pagamento_facial: banco })
+          .in("id", idsDoValor);
+        if (error) throw error;
+      }
       toast.success(`${contar(ids.length, "pagamento facial registrado", "pagamentos faciais registrados")}.`);
       setSel(new Set());
       setConfirm(false);
@@ -234,10 +276,9 @@ export default function PagamentoFacialPage() {
 
   const fmtData = (d: string | null) => (d ? format(new Date(d + "T00:00:00"), "dd/MM/yyyy") : "—");
   const fmtReais = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  // pagar_facial é texto: emissões antigas guardam "Sim" (sem valor); as pagas pelo app guardam o valor. Sempre exibe em R$ (padrão quando não numérico).
-  const fmtValorFacial = (v: string | number | null) => {
-    const n = Number(v);
-    return fmtReais(Number.isFinite(n) && n > 0 ? n : VALOR_FACIAL_PADRAO);
+  const fmtValorLinha = (l: LinhaFacial) => {
+    const v = valorDaLinha(l);
+    return v == null ? "sem valor" : fmtReais(v);
   };
 
   return (
@@ -249,7 +290,7 @@ export default function PagamentoFacialPage() {
         </div>
         {!verPagos ? (
           <div className="flex items-center gap-2">
-            <PagarPorPixButton tipo="facial" ids={[...sel]} valorUnitario={VALOR_FACIAL_PADRAO} />
+            <PagarPorPixButton tipo="facial" ids={[...sel]} />
             <Button onClick={abrirPagamento} disabled={sel.size === 0}>
               <CheckCircle2 className="h-4 w-4 mr-2" />Pagar selecionados ({sel.size})
             </Button>
@@ -264,7 +305,20 @@ export default function PagamentoFacialPage() {
       {!verPagos && (
         <div className="flex flex-wrap gap-3">
           <Card className="px-4 py-3"><div className="text-xs text-muted-foreground">Emissões pendentes</div><div className="text-xl font-bold">{totalPendentes}</div></Card>
-          <Card className="px-4 py-3"><div className="text-xs text-muted-foreground">Total a pagar (R$ {VALOR_FACIAL_PADRAO}/emissão)</div><div className="text-xl font-bold">{fmtReais(valorPendente)}</div></Card>
+          <Card className="px-4 py-3">
+            <div className="text-xs text-muted-foreground">Total a pagar</div>
+            <div className="text-xl font-bold">{fmtReais(valorPendente)}</div>
+            {totalPendentes > 0 && (
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {composicao(pendentes).map((c) => `${c.programa}: ${c.qtd} × ${c.valor > 0 ? fmtReais(c.valor) : "sem valor"}`).join(" · ")}
+              </div>
+            )}
+            {pendentesSemValor > 0 && (
+              <div className="text-xs text-destructive mt-0.5">
+                {contar(pendentesSemValor, "emissão sem valor", "emissões sem valor")} — cadastre o valor do programa em Configurações → Programas → aba Regras.
+              </div>
+            )}
+          </Card>
         </div>
       )}
 
@@ -315,16 +369,16 @@ export default function PagamentoFacialPage() {
               <SortableHead label="Data" sortKey="data_emissao" activeKey={sKey} dir={sDir} onSort={sToggle} />
               <SortableHead label="Localizador" sortKey="localizador" activeKey={sKey} dir={sDir} onSort={sToggle} />
               <SortableHead label="Programa" sortKey="programa" activeKey={sKey} dir={sDir} onSort={sToggle} />
-              {verPagos && <SortableHead label="Valor" sortKey="_sValor" activeKey={sKey} dir={sDir} onSort={sToggle} className="text-right" align="right" />}
+              <SortableHead label="Valor" sortKey="_sValor" activeKey={sKey} dir={sDir} onSort={sToggle} className="text-right" align="right" />
               {verPagos && <SortableHead label="Pago em" sortKey="data_pagto_facial" activeKey={sKey} dir={sDir} onSort={sToggle} />}
               {verPagos && <SortableHead label="Banco de saída" sortKey="banco_pagamento_facial" activeKey={sKey} dir={sDir} onSort={sToggle} />}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={verPagos ? 8 : 5} className="text-center text-muted-foreground py-6"><Loader2 className="h-5 w-5 animate-spin inline" /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={verPagos ? 8 : 6} className="text-center text-muted-foreground py-6"><Loader2 className="h-5 w-5 animate-spin inline" /></TableCell></TableRow>
             ) : total === 0 ? (
-              <TableRow><TableCell colSpan={verPagos ? 8 : 5} className="text-center text-muted-foreground py-6">{verPagos ? "Nenhum facial pago." : "Nenhum facial pendente."}</TableCell></TableRow>
+              <TableRow><TableCell colSpan={verPagos ? 8 : 6} className="text-center text-muted-foreground py-6">{verPagos ? "Nenhum facial pago." : "Nenhum facial pendente."}</TableCell></TableRow>
             ) : paged.map((g) => {
               const ids = g.itens.filter((i) => !emLotePix.has(i.id)).map((i) => i.id);
               const todos = ids.length > 0 && ids.every((id) => sel.has(id));
@@ -335,7 +389,7 @@ export default function PagamentoFacialPage() {
                     <TableCell className="py-2">
                       <input type="checkbox" className="h-4 w-4 accent-[hsl(var(--primary))]" checked={todos} disabled={ids.length === 0} ref={(el) => { if (el) el.indeterminate = algum && !todos; }} onChange={() => toggleConta(g.itens)} />
                     </TableCell>
-                    <TableCell colSpan={verPagos ? 7 : 4} className="py-2 font-semibold">
+                    <TableCell colSpan={verPagos ? 7 : 5} className="py-2 font-semibold">
                       <span className="font-mono">{g.codigo}</span> · {g.nome}
                       <Badge variant="secondary" className="ml-2">{contar(g.itens.length, "emissão", "emissões")}</Badge>
                     </TableCell>
@@ -366,7 +420,7 @@ export default function PagamentoFacialPage() {
                       <TableCell className="py-2">{fmtData(l.data_emissao)}</TableCell>
                       <TableCell className="py-2 font-mono text-sm font-semibold">{l.localizador || "—"}</TableCell>
                       <TableCell className="py-2 text-muted-foreground">{l.programa || "—"}</TableCell>
-                      {verPagos && <TableCell className="py-2 text-right font-mono">{fmtValorFacial(l.pagar_facial)}</TableCell>}
+                      <TableCell className={`py-2 text-right font-mono ${valorDaLinha(l) == null ? "text-destructive text-xs" : ""}`}>{fmtValorLinha(l)}</TableCell>
                       {verPagos && <TableCell className="py-2 text-muted-foreground">{fmtData(l.data_pagto_facial)}</TableCell>}
                       {verPagos && <TableCell className="py-2 text-muted-foreground">{l.banco_pagamento_facial || "—"}</TableCell>}
                     </TableRow>
@@ -383,14 +437,21 @@ export default function PagamentoFacialPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Registrar pagamento facial</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">
-            {contar(sel.size, "emissão selecionada", "emissões selecionadas")}. Informe o valor por emissão, a data do pagamento e de qual banco saiu o valor. Cada emissão será marcada como paga.
+            {contar(sel.size, "emissão selecionada", "emissões selecionadas")}. Cada emissão é paga pelo valor do facial do programa dela (gravado no lançamento). Informe a data do pagamento e de qual banco saiu o valor.
           </p>
+          <div className="rounded-md border divide-y text-sm">
+            {composicao(selecionadas).map((c) => (
+              <div key={`${c.programa}|${c.valor}`} className="flex justify-between px-3 py-1.5">
+                <span>{c.programa}: {c.qtd} × {fmtReais(c.valor)}</span>
+                <span className="font-mono">{fmtReais(c.qtd * c.valor)}</span>
+              </div>
+            ))}
+          </div>
           <div className="grid grid-cols-2 gap-3 py-2">
-            <div className="grid gap-1"><Label>Valor por emissão (R$)</Label><NumericInput value={valor} onChange={setValor} decimal /></div>
-            <div className="grid gap-1"><Label>Data do pagamento</Label><Input type="date" value={dataPgto} onChange={(e) => setDataPgto(e.target.value)} /></div>
+            <div className="grid gap-1 col-span-2"><Label>Data do pagamento</Label><Input type="date" value={dataPgto} onChange={(e) => setDataPgto(e.target.value)} /></div>
             <div className="grid gap-1 col-span-2"><Label>Banco de saída</Label><SearchSelect value={banco} onChange={setBanco} options={(bancos ?? []).map((b) => ({ value: b.nome, label: b.nome }))} /></div>
           </div>
-          <div className="text-sm">Total: <b>{fmtReais(sel.size * (valor || 0))}</b></div>
+          <div className="text-sm">Total: <b>{fmtReais(totalSelecionado)}</b></div>
           <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" onClick={() => setConfirm(false)} disabled={pagando}>Cancelar</Button>
             <Button onClick={confirmarPagamento} disabled={pagando}>{pagando ? "Salvando..." : `Confirmar pagamento`}</Button>

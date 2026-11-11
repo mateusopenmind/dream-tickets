@@ -19,7 +19,9 @@ type Tipo = "facial" | "fornecedor" | "reembolso";
 interface Props {
   tipo: Tipo;
   ids: string[];
-  valorUnitario?: number;   // obrigatorio apenas para facial
+  // Facial: o valor de cada emissao vem do banco (emissoes.valor_facial, copiado do programa).
+  // Este campo ficou so como reserva para emissao sem valor gravado.
+  valorUnitario?: number;
   disabled?: boolean;
 }
 

@@ -60,6 +60,7 @@ export const AJUDA: SecaoAjuda[] = [
         "Campos da emissão: CPFs Otimizados, Código LA, % Cashback, Pagar facial?, Aceita valores em reais e Milhas abaixo de 1.000.\n" +
         "Ajustes (só aparecem quando Reais ≠ Cobrados): Cupom (%), Hack Upgrade, Retarifação, Retarifação (Outro Programa), Taxa de Resgate, Desconto Promocional e Campo Aberto.\n" +
         "Outros: Taxa de Queima de CPF (o valor por pax continua em Configurações → Taxa Queima CPF).\n" +
+        "'Pagar facial?' tem um campo de valor ao lado da chave: é quanto se paga por emissão com facial naquele programa (ex.: Latam R$ 20, Smiles R$ 10). Com a chave ligada, o valor é obrigatório.\n" +
         "'Milhas abaixo de 1.000' não some com campo nenhum — ela só derruba o piso da Qtde Milhas de 1.000 para 100 (hoje ligada no Azul Liminar).\n" +
         "Regra desligada = o campo nem aparece para o emissor, e o valor não é gravado. Programa novo nasce só com o Campo Aberto ligado — ligue o resto no cadastro.\n" +
         "O único campo de ajuste que pede valor é o Cupom (%), em percentual com 2 casas decimais; os demais são caixas de marcar e o Campo Aberto é texto livre." },
@@ -143,7 +144,7 @@ export const AJUDA: SecaoAjuda[] = [
       { campo: "Localizador", regra: "Obrigatório. Sem espaços, em maiúsculas, com 6 ou 13 caracteres." },
       { campo: "Programa", regra: "Obrigatório. Mostra apenas os programas que a conta selecionada participa (e a conta filtra pelas que têm o programa). Configure os programas de cada conta em Contas." },
       { campo: "Código LA", regra: "Aparece quando a regra 'Código LA' está ligada para o programa (Configurações → Programas → aba Regras). Hoje está ligada só na Latam. Quando aparece é obrigatório, deve começar com 'LA' e ter 13 caracteres. Se digitar algo diferente, o campo fica vermelho com o aviso." },
-      { campo: "% Cashback / Pagar facial?", regra: "Aparecem quando as regras '% Cashback' e 'Pagar facial?' estão ligadas para o programa (hoje só na Latam). Nos demais programas ficam ocultos e não são gravados." },
+      { campo: "% Cashback / Pagar facial?", regra: "Aparecem quando as regras '% Cashback' e 'Pagar facial?' estão ligadas para o programa (Configurações → Programas → aba Regras). Nos demais programas ficam ocultos e não são gravados. Ao salvar com facial = Sim, a emissão guarda o valor do facial do programa naquele momento (ex.: Latam R$ 20, Smiles R$ 10) — se o valor do programa mudar depois, as emissões já lançadas continuam com o valor antigo." },
       { campo: "Qtde Milhas", regra: "Deve ser 0 ou no mínimo 1.000. Número inteiro. Nos programas com a regra 'Milhas abaixo de 1.000' ligada (Configurações > Programas > Regras), o mínimo cai para 100." },
       { campo: "Nº de Pax", regra: "Obrigatório, no mínimo 1 passageiro." },
       { campo: "CPFs Otimizados", regra: "Aparece ao lado do Nº de Pax quando a regra 'CPFs Otimizados' está ligada para o programa (hoje só na Smiles). Opcional; se preenchido, deve ser entre 1 e o Nº de Pax." },
@@ -175,7 +176,7 @@ export const AJUDA: SecaoAjuda[] = [
       { campo: "Valores Reais", regra: "Use o botão 'Copiar dos Valores Cobrados' para preencher milhas, taxas, bagagens, assentos e outros reais iguais aos cobrados, inclusive o tipo R$/Milhas (o caso mais comum). Depois é só ajustar o que for diferente. Tipo diferente entre Cobrado e Real também conta como diferença e abre os Ajustes." },
       { campo: "Obrigatórios", regra: "Data, Hora, Localizador, Programa, Operação, Emissor, Origem, Cliente, Conta, Cartão Utilizado, Data do Voo e Nº de Pax." },
       { campo: "ID Emissão / Data-Hora", regra: "Gerados automaticamente pelo sistema; o ID é único e começa com as iniciais do usuário (ex.: MO00001)." },
-      { campo: "Facial Realizada?", regra: "Aparece quando a regra 'Pagar facial?' está ligada para o programa (hoje só na Latam). Já vem marcado como Sim por padrão (caso mais comum) — desmarque se a emissão não for pagamento facial. O valor e a data do facial NÃO são informados aqui — o pagamento é lançado depois na tela 'Pagamento Facial'." },
+      { campo: "Facial Realizada?", regra: "Aparece quando a regra 'Pagar facial?' está ligada para o programa. Já vem marcado como Sim por padrão (caso mais comum) — desmarque se a emissão não for pagamento facial. O valor do facial não é digitado aqui: vem do cadastro do programa (Configurações → Programas → aba Regras). A data do pagamento é lançada depois na tela 'Pagamento Facial'." },
     ],
     observacoes: [
       "Na tela de Nova Emissão o ID ainda não existe — aparece a marcação 'ID gerado ao salvar'. Na edição, o ID já gerado aparece no topo, ao lado do título.",
@@ -317,26 +318,26 @@ export const AJUDA: SecaoAjuda[] = [
     chave: "pagamento_facial",
     telaChave: "pagamento_facial",
     titulo: "Pagamento Facial",
-    resumo: "Controla os pagamentos faciais das emissões Latam marcadas como facial. Lista os pendentes agrupados por conta e permite quitar várias de uma vez. (Facial é exclusivo do programa Latam.)",
+    resumo: "Controla os pagamentos faciais das emissões marcadas como facial, de qualquer programa com a regra 'Pagar facial?' ligada (ex.: Latam e Smiles). Lista os pendentes agrupados por conta, cada um com o valor do seu programa, e permite quitar várias de uma vez.",
     passos: [
-      "A tela lista as emissões com 'É facial?' = Sim e ainda NÃO pagas, agrupadas por conta (código + nome), mostrando o nº da emissão, data, localizador e programa.",
+      "A tela lista as emissões com 'É facial?' = Sim e ainda NÃO pagas, agrupadas por conta (código + nome), mostrando o nº da emissão, data, localizador, programa e valor do facial.",
       "Marque as emissões que vai pagar — uma a uma, a conta inteira pelo checkbox da linha do grupo, ou TODAS de uma vez pelo checkbox do cabeçalho da tabela (ele marca a lista inteira que está sendo exibida, inclusive as outras páginas; com a busca preenchida, marca só o que a busca encontrou).",
       "Para montar o lote do banco, use a caixa 'Marcar 20': ela marca as próximas 20 emissões disponíveis, na ordem em que aparecem na tela (o banco aceita no máximo 20 pagamentos por lote). Desmarcar a caixa limpa a seleção; depois de pagar, o próximo clique já pega as 20 seguintes.",
-      "Clique em 'Pagar selecionados'. Informe o valor por emissão (padrão R$ 20) e a data do pagamento, e confirme.",
+      "Clique em 'Pagar selecionados'. O modal mostra a conta montada por programa (ex.: Latam: 3 × R$ 20,00 · Smiles: 2 × R$ 10,00) e o total. Informe a data do pagamento e o banco de saída, e confirme.",
       "As emissões pagas saem da lista de pendentes. Use 'Ver pagos' para consultar o histórico (com valor e data de pagamento).",
     ],
     regras: [
       { campo: "Em lote Pix aberto", regra: "Quem já está num lote de pagamento por Pix ainda não resolvido aparece com um cadeado no lugar da caixa de seleção e a etiqueta \"em conferência Pix\" (ou \"pagando por Pix\"). Enquanto o lote não for aprovado ou revertido na Conferência Pix, essa emissão não pode ir de novo para o Pix nem receber baixa na mão — é o que impede pagar duas vezes a mesma coisa. Resolvido o lote, a linha volta a ficar disponível sozinha." },
       { campo: "Quais aparecem", regra: "Somente emissões com a flag 'É facial?' marcada e facial_pago = falso (pendentes). 'Ver pagos' mostra as já quitadas." },
-      { campo: "Valor padrão", regra: "R$ 20 por emissão, editável no momento do pagamento. O total é valor × quantidade de emissões selecionadas." },
-      { campo: "Pagamento em lote", regra: "Várias emissões da mesma conta (ou de contas diferentes) podem ser pagas de uma vez com a mesma data e valor." },
+      { campo: "Valor", regra: "Cada emissão é paga pelo valor do facial do programa dela, cadastrado em Configurações → Programas → aba Regras (ao lado da chave 'Pagar facial?'). O valor é gravado na emissão quando ela é lançada: mudar o cadastro depois não altera as já lançadas. O total é a soma dos valores das emissões. Emissão sem valor (programa sem valor cadastrado) aparece em vermelho e não pode ser paga até o valor ser cadastrado." },
+      { campo: "Pagamento em lote", regra: "Várias emissões da mesma conta (ou de contas diferentes, e de programas diferentes) podem ser pagas de uma vez com a mesma data — cada uma pelo seu valor. No 'Pagar por Pix', as emissões da mesma conta viram um Pix só pela soma dos valores." },
       { campo: "Marcar 20", regra: "Substitui a seleção pelas primeiras 20 emissões disponíveis da lista exibida (respeita a busca e a ordenação; ignora as que estão com cadeado de lote Pix). 20 é o limite de pagamentos por lote do banco — se a seleção passar de 20, a tela mostra um aviso em vermelho." },
       { campo: "Acesso", regra: "Tela controlada por permissão — liberada pelo super admin (ou admin, dentro das telas que possui)." },
     ],
     observacoes: [
-      "O valor e a data do facial não são preenchidos na emissão — só aqui, na hora de pagar.",
-      "Os cartões do topo mostram o total de emissões pendentes e o valor estimado a pagar.",
-      "Toda sexta-feira às 8h o sistema envia automaticamente por WhatsApp a lista dos faciais pendentes para o responsável efetuar os Pix no banco e dar baixa nesta tela. Cada linha traz o código da conta, o nº da emissão, o localizador, a data e o programa, e a lista vem ordenada pelo código da conta (emissões sem conta ficam no fim). A lista é a mesma desta tela: entram todos os faciais ainda não pagos, inclusive de emissões com a cobrança cancelada (desde 06/11/2026).",
+      "O valor do facial vem do programa (gravado na emissão no lançamento); a data e o banco do pagamento são informados aqui, na hora de pagar.",
+      "Os cartões do topo mostram o total de emissões pendentes e o valor a pagar, com a composição por programa (quantidade × valor).",
+      "Toda sexta-feira às 8h o sistema envia automaticamente por WhatsApp a lista dos faciais pendentes para o responsável efetuar os Pix no banco e dar baixa nesta tela. Cada linha traz o código da conta, o nº da emissão, o localizador, a data, o programa e o valor do facial, a mensagem termina com a quantidade e o valor total, e a lista vem ordenada pelo código da conta (emissões sem conta ficam no fim). A lista é a mesma desta tela: entram todos os faciais ainda não pagos, inclusive de emissões com a cobrança cancelada (desde 06/11/2026).",
     ],
   },
   {
