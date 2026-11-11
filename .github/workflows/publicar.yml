@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: publicar
+  group: publicar-2
   cancel-in-progress: true
 
 jobs:
