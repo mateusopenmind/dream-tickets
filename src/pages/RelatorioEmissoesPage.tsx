@@ -17,10 +17,13 @@ import { contar } from "@/lib/plural";
 
 interface Row {
   id: string;
+  /** "Própria" (tabela emissoes) ou "Terceirizada" (tabela emissoes_terceirizadas). */
+  tipo: string;
   serie: string;
   owner_id: string;
   operador: string;
   data_emissao: string | null;
+  hora: string;
   data_voo_ida: string | null;
   programa: string;
   nome_operacao: string;
@@ -114,24 +117,37 @@ export default function RelatorioEmissoesPage() {
       // Os campos *_tipo vêm junto porque taxas/bagagens/assentos/outros podem ter sido
       // lançados EM MILHAS — nesse caso a coluna guarda uma quantidade de milhas, e não
       // reais. A conversão acontece no mapeamento abaixo (ver `emReais`).
-      const sel = "id_emissao, owner_id, data_emissao, data_voo_ida, programa, nome_operacao, status_pix, emissor, forma_pagamento, facial, codigo_la, percentual_cb, passageiros_qtd, milhas_cobrado, preco_milheiro, milhas_real, taxas_cobrado, taxas_tipo, taxas_real, taxas_real_tipo, outros_cobrado, outros_tipo, outros_real, outros_real_tipo, bagagens_cobrado, bagagens_tipo, assentos_cobrado, assentos_tipo, preco_total, valor_recebido, clientes(codigo), contas(codigo)";
+      // Emissões próprias + terceirizadas no mesmo relatório (pedido do cliente 23/11/2026).
+      // A terceirizada não tem conta, cartão, % cashback nem facial — esses campos ficam vazios.
+      const selPropria = "id_emissao, owner_id, data_emissao, hora, data_voo_ida, programa, nome_operacao, status_pix, emissor, forma_pagamento, facial, codigo_la, percentual_cb, passageiros_qtd, milhas_cobrado, preco_milheiro, milhas_real, taxas_cobrado, taxas_tipo, taxas_real, taxas_real_tipo, outros_cobrado, outros_tipo, outros_real, outros_real_tipo, bagagens_cobrado, bagagens_tipo, assentos_cobrado, assentos_tipo, preco_total, valor_recebido, clientes(codigo), contas(codigo)";
+      const selTerc = "id_emissao, owner_id, data_emissao, hora, data_voo_ida, programa, nome_operacao, status_pix, emissor, codigo_la, passageiros_qtd, milhas_cobrado, preco_milheiro, milhas_real, taxas_cobrado, taxas_tipo, taxas_real, taxas_real_tipo, outros_cobrado, outros_tipo, outros_real, outros_real_tipo, bagagens_cobrado, bagagens_tipo, assentos_cobrado, assentos_tipo, preco_total, valor_recebido, clientes(codigo)";
       // PostgREST corta em 1000 linhas por requisição — paginar para trazer todas.
       const PAGE = 1000;
-      const data: any[] = [];
-      for (let ini = 0; ; ini += PAGE) {
-        let q = supabase.from("emissoes").select(sel).order("id_emissao", { ascending: true }).range(ini, ini + PAGE - 1);
-        if (!veTudo && user) q = q.eq("owner_id", user.id);
-        const { data: pg, error } = await q;
-        if (error) throw error;
-        data.push(...(pg ?? []));
-        if (!pg || pg.length < PAGE) break;
-      }
+      const buscar = async (tabela: "emissoes" | "emissoes_terceirizadas", sel: string, tipo: string) => {
+        const out: any[] = [];
+        for (let ini = 0; ; ini += PAGE) {
+          let q = (supabase.from(tabela) as any).select(sel).order("id_emissao", { ascending: true }).range(ini, ini + PAGE - 1);
+          if (!veTudo && user) q = q.eq("owner_id", user.id);
+          const { data: pg, error } = await q;
+          if (error) throw error;
+          out.push(...(pg ?? []).map((r: any) => ({ ...r, _tipo: tipo })));
+          if (!pg || pg.length < PAGE) break;
+        }
+        return out;
+      };
+      const [proprias, terceirizadas] = await Promise.all([
+        buscar("emissoes", selPropria, "Própria"),
+        buscar("emissoes_terceirizadas", selTerc, "Terceirizada"),
+      ]);
+      const data = [...proprias, ...terceirizadas];
       return data.map((r: any) => ({
         id: r.id_emissao ?? "",
+        tipo: r._tipo,
         serie: (String(r.id_emissao ?? "").match(/^[A-Za-z]+/)?.[0] ?? "—"),
         owner_id: r.owner_id ?? "",
         operador: "",
         data_emissao: r.data_emissao,
+        hora: r.hora ? String(r.hora).slice(0, 5) : "",
         data_voo_ida: r.data_voo_ida,
         programa: r.programa ?? "",
         nome_operacao: r.nome_operacao ?? "",
@@ -258,7 +274,9 @@ export default function RelatorioEmissoesPage() {
   const exportar = () => {
     const colunas: ColunaExcel<Row>[] = [
       { header: "ID", key: "id", largura: 14 },
+      { header: "Tipo", key: "tipo", largura: 13 },
       { header: "Data", key: "data_emissao", tipo: "data", largura: 12 },
+      { header: "Hora", key: "hora", largura: 8 },
       { header: "Voo Ida", key: "data_voo_ida", tipo: "data", largura: 12 },
       { header: "Programa", key: "programa", largura: 16 },
       { header: "Operação", key: "nome_operacao", largura: 20 },
@@ -564,6 +582,7 @@ export default function RelatorioEmissoesPage() {
                   <TableHeader className="sticky top-0 bg-card z-10">
                     <TableRow>
                       <SortableHead label="ID" sortKey="id" activeKey={sdet.key} dir={sdet.dir} onSort={sdet.toggle} />
+                      <SortableHead label="Tipo" sortKey="tipo" activeKey={sdet.key} dir={sdet.dir} onSort={sdet.toggle} />
                       <SortableHead label="Data" sortKey="data_emissao" activeKey={sdet.key} dir={sdet.dir} onSort={sdet.toggle} />
                       <SortableHead label="Voo Ida" sortKey="data_voo_ida" activeKey={sdet.key} dir={sdet.dir} onSort={sdet.toggle} />
                       <SortableHead label="Programa" sortKey="programa" activeKey={sdet.key} dir={sdet.dir} onSort={sdet.toggle} />
@@ -585,10 +604,11 @@ export default function RelatorioEmissoesPage() {
                   </TableHeader>
                   <TableBody>
                     {sdet.sorted.length === 0 ? (
-                      <TableRow><TableCell colSpan={18} className="text-center text-muted-foreground py-6">Nenhuma emissão com os filtros atuais.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={19} className="text-center text-muted-foreground py-6">Nenhuma emissão com os filtros atuais.</TableCell></TableRow>
                     ) : sdet.sorted.map((r) => (
-                      <TableRow key={r.id}>
+                      <TableRow key={`${r.tipo}-${r.id}`}>
                         <TableCell className="font-mono text-xs whitespace-nowrap">{r.id}</TableCell>
+                        <TableCell className="whitespace-nowrap">{r.tipo}</TableCell>
                         <TableCell className="whitespace-nowrap text-muted-foreground">{data(r.data_emissao)}</TableCell>
                         <TableCell className="whitespace-nowrap text-muted-foreground">{data(r.data_voo_ida)}</TableCell>
                         <TableCell className="whitespace-nowrap">{r.programa}</TableCell>
