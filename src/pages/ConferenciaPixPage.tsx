@@ -79,6 +79,13 @@ const ROTULO_STATUS: Record<string, string> = {
 // Historico: 2s -> 5s (16/10/2026, suspeita de excesso de chamadas) -> 3s (16/10/2026,
 // depois de provar que o bloqueio do banco vinha de varios lotes rodando ao mesmo tempo).
 const SEGUNDOS_POR_ITEM = 3.5;
+// Devolucao demora mais: desde 25/11/2026 o Executar Lote espera o Sicoob confirmar cada
+// devolucao (consulta a cada 5s) antes de passar para a proxima — e o que impede duas
+// devolucoes do mesmo Pix de se atropelarem. Normal: 3s de intervalo + envio + 1 ou 2
+// consultas. Se mudar "Esperar Consulta"/"Esperar Retentativa" no n8n, revise aqui.
+const SEGUNDOS_POR_DEVOLUCAO = 10;
+const segundosDoItem = (metodo: string | null | undefined) =>
+  metodo === "DEVOLUCAO" ? SEGUNDOS_POR_DEVOLUCAO : SEGUNDOS_POR_ITEM;
 // Passou disso alem do previsto, parou de ser demora e virou problema.
 const FOLGA_ANTES_DE_AVISAR = 120;
 
@@ -498,10 +505,14 @@ export default function ConferenciaPixPage() {
       (preparando ? lote.solicitado_em : (lote.aprovado_em ?? lote.updated_at ?? lote.solicitado_em)),
     ).getTime();
     const decorrido = Math.max(0, (agora - inicio) / 1000);
-    const restante = faltam * SEGUNDOS_POR_ITEM;
+    // Cada item pesa conforme o metodo: chave Pix ~3,5s, devolucao ~10s (espera a confirmacao).
+    const restante = alvos
+      .filter((g) => (preparando ? g.lider.estado === "PENDENTE" : ["PENDENTE", "INICIADO"].includes(g.lider.estado)))
+      .reduce((s, g) => s + segundosDoItem(g.lider.metodo), 0);
+    const previstoTotal = alvos.reduce((s, g) => s + segundosDoItem(g.lider.metodo), 0);
     // O banco esta demorando mais do que o combinado: melhor dizer isso do que
     // ficar prometendo um tempo que ja passou.
-    const atrasado = decorrido > total * SEGUNDOS_POR_ITEM + FOLGA_ANTES_DE_AVISAR;
+    const atrasado = decorrido > previstoTotal + FOLGA_ANTES_DE_AVISAR;
 
     return { total, feitos, faltam, decorrido, restante, atrasado,
              pct: total > 0 ? Math.round((feitos / total) * 100) : 0 };
@@ -976,7 +987,7 @@ export default function ConferenciaPixPage() {
                 <span className="font-medium">Aprovar o pagamento de {fmtReais(total)}</span>
                 {grupos.length > 0 && (
                   <span className="text-sm text-muted-foreground">
-                    · {grupos.length === 1 ? "1 Pix" : `${grupos.length} Pix`}, uns {duracao(grupos.length * SEGUNDOS_POR_ITEM)} de envio
+                    · {grupos.length === 1 ? "1 Pix" : `${grupos.length} Pix`}, uns {duracao(grupos.reduce((s, g) => s + segundosDoItem(g.lider.metodo), 0))} de envio
                   </span>
                 )}
               </div>
