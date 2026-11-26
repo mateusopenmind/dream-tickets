@@ -14,6 +14,7 @@ import { Plane, Coins, Gauge, Receipt, Search, Download, Loader2, X } from "luci
 import { format } from "date-fns";
 import { exportarExcel, type ColunaExcel } from "@/lib/exportarExcel";
 import { contar } from "@/lib/plural";
+import { formatarDocumento } from "@/lib/pagadorPix";
 
 interface Row {
   id: string;
@@ -47,6 +48,9 @@ interface Row {
   assentos_cobrado: number;
   preco_total: number;
   valor_recebido: number;
+  pagador_nome: string;
+  pagador_documento: string;
+  pagador_instituicao: string;
 }
 
 const ALL = "__all";
@@ -119,8 +123,8 @@ export default function RelatorioEmissoesPage() {
       // reais. A conversão acontece no mapeamento abaixo (ver `emReais`).
       // Emissões próprias + terceirizadas no mesmo relatório (pedido do cliente 23/11/2026).
       // A terceirizada não tem conta, cartão, % cashback nem facial — esses campos ficam vazios.
-      const selPropria = "id_emissao, owner_id, data_emissao, hora, data_voo_ida, programa, nome_operacao, status_pix, emissor, forma_pagamento, facial, codigo_la, percentual_cb, passageiros_qtd, milhas_cobrado, preco_milheiro, milhas_real, taxas_cobrado, taxas_tipo, taxas_real, taxas_real_tipo, outros_cobrado, outros_tipo, outros_real, outros_real_tipo, bagagens_cobrado, bagagens_tipo, assentos_cobrado, assentos_tipo, preco_total, valor_recebido, clientes(codigo), contas(codigo)";
-      const selTerc = "id_emissao, owner_id, data_emissao, hora, data_voo_ida, programa, nome_operacao, status_pix, emissor, codigo_la, passageiros_qtd, milhas_cobrado, preco_milheiro, milhas_real, taxas_cobrado, taxas_tipo, taxas_real, taxas_real_tipo, outros_cobrado, outros_tipo, outros_real, outros_real_tipo, bagagens_cobrado, bagagens_tipo, assentos_cobrado, assentos_tipo, preco_total, valor_recebido, clientes(codigo)";
+      const selPropria = "id_emissao, owner_id, data_emissao, hora, data_voo_ida, programa, nome_operacao, status_pix, emissor, forma_pagamento, facial, codigo_la, percentual_cb, passageiros_qtd, milhas_cobrado, preco_milheiro, milhas_real, taxas_cobrado, taxas_tipo, taxas_real, taxas_real_tipo, outros_cobrado, outros_tipo, outros_real, outros_real_tipo, bagagens_cobrado, bagagens_tipo, assentos_cobrado, assentos_tipo, preco_total, valor_recebido, pagador_nome, pagador_documento, pagador_instituicao, clientes(codigo), contas(codigo)";
+      const selTerc = "id_emissao, owner_id, data_emissao, hora, data_voo_ida, programa, nome_operacao, status_pix, emissor, codigo_la, passageiros_qtd, milhas_cobrado, preco_milheiro, milhas_real, taxas_cobrado, taxas_tipo, taxas_real, taxas_real_tipo, outros_cobrado, outros_tipo, outros_real, outros_real_tipo, bagagens_cobrado, bagagens_tipo, assentos_cobrado, assentos_tipo, preco_total, valor_recebido, pagador_nome, pagador_documento, pagador_instituicao, clientes(codigo)";
       // PostgREST corta em 1000 linhas por requisição — paginar para trazer todas.
       const PAGE = 1000;
       const buscar = async (tabela: "emissoes" | "emissoes_terceirizadas", sel: string, tipo: string) => {
@@ -173,6 +177,9 @@ export default function RelatorioEmissoesPage() {
         assentos_cobrado: emReais(r.assentos_cobrado, r.assentos_tipo, r.preco_milheiro),
         preco_total: r.preco_total ?? 0,
         valor_recebido: r.valor_recebido ?? 0,
+        pagador_nome: r.pagador_nome ?? "",
+        pagador_documento: formatarDocumento(r.pagador_documento),
+        pagador_instituicao: r.pagador_instituicao ?? "",
       }));
     },
   });
@@ -300,6 +307,9 @@ export default function RelatorioEmissoesPage() {
       { header: "Assentos cobrado", key: "assentos_cobrado", tipo: "moeda", largura: 17 },
       { header: "Preço total", key: "preco_total", tipo: "moeda", largura: 14 },
       { header: "Valor recebido", key: "valor_recebido", tipo: "moeda", largura: 15 },
+      { header: "Pagador", key: "pagador_nome", largura: 32 },
+      { header: "CPF/CNPJ pagador", key: "pagador_documento", largura: 20 },
+      { header: "Instituição pagador", key: "pagador_instituicao", largura: 28 },
       { header: "Facial", key: "facial_txt", largura: 8 },
     ];
     const linhas = filtered.map((r) => ({ ...r, facial_txt: r.facial ? "Sim" : "Não" }));

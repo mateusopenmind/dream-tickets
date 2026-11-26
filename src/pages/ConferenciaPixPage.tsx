@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { SortableHead } from "@/components/ui/sortable-head";
 import { useSort } from "@/hooks/useSort";
 import { contar } from "@/lib/plural";
+import { formatarDocumento } from "@/lib/pagadorPix";
 
 // Conferencia Pix — onde o lote e conferido e aprovado antes de qualquer dinheiro sair.
 //
@@ -131,6 +132,13 @@ interface Item {
   grupo_chave: string | null;
   grupo_lider: boolean;
   valor_grupo: number | null;
+  // Dados de quem recebeu, devolvidos pelo banco na confirmacao (20261126130000_pagamentos_dados_recebedor.sql)
+  recebedor_nome?: string | null;
+  recebedor_documento?: string | null;
+  recebedor_instituicao?: string | null;
+  recebedor_agencia?: string | null;
+  recebedor_conta?: string | null;
+  recebedor_tipo_conta?: string | null;
 }
 
 // Um grupo = um Pix. No facial, varias emissoes da mesma conta viram um pagamento so.
@@ -199,7 +207,7 @@ export default function ConferenciaPixPage() {
       const { data, error } = await supabase
         .from("pagamentos_lote_itens")
         .select(
-          "id, referencia, localizador, nome_cadastro, titular_esperado, titular_nome, titular_documento, divergencia_nome, chave_pix, valor, descricao, metodo, estado, erro, end_to_end_id, pago_em, grupo_chave, grupo_lider, valor_grupo",
+          "id, referencia, localizador, nome_cadastro, titular_esperado, titular_nome, titular_documento, divergencia_nome, chave_pix, valor, descricao, metodo, estado, erro, end_to_end_id, pago_em, grupo_chave, grupo_lider, valor_grupo, recebedor_nome, recebedor_documento, recebedor_instituicao, recebedor_agencia, recebedor_conta, recebedor_tipo_conta",
         )
         .eq("lote_id", loteSelecionado)
         .order("estado")
@@ -408,8 +416,13 @@ export default function ConferenciaPixPage() {
     return {
       tipo: lote?.tipo ?? "",
       valor: g.total,
-      favorecido: i.titular_nome ?? i.nome_cadastro,
-      documento: i.titular_documento,
+      // O que o banco devolveu na confirmacao vale mais que o DICT (que vem mascarado)
+      favorecido: i.recebedor_nome ?? i.titular_nome ?? i.nome_cadastro,
+      documento: i.recebedor_documento ?? i.titular_documento,
+      instituicao: i.recebedor_instituicao ?? null,
+      agencia: i.recebedor_agencia ?? null,
+      conta: i.recebedor_conta ?? null,
+      tipoConta: i.recebedor_tipo_conta ?? null,
       chavePix: i.chave_pix,
       descricao: i.descricao,
       referencia: g.itens.map((x) => x.referencia).filter(Boolean).join(", ") || null,
@@ -800,7 +813,8 @@ export default function ConferenciaPixPage() {
                         ) : i.titular_nome ? (
                           <div>
                             <div className={i.divergencia_nome ? "font-medium text-destructive" : ""}>{i.titular_nome}</div>
-                            {i.titular_documento && <div className="text-xs text-muted-foreground">{i.titular_documento}</div>}
+                            {(i.recebedor_documento || i.titular_documento) && <div className="text-xs text-muted-foreground">{formatarDocumento(i.recebedor_documento || i.titular_documento)}</div>}
+                            {i.recebedor_instituicao && <div className="text-xs text-muted-foreground">{i.recebedor_instituicao}{i.recebedor_agencia || i.recebedor_conta ? ` · Ag. ${i.recebedor_agencia ?? "—"} · Conta ${i.recebedor_conta ?? "—"}` : ""}</div>}
                           </div>
                         ) : (
                           <span className="text-muted-foreground text-sm">aguardando consulta…</span>

@@ -515,6 +515,10 @@ export type Database = {
       }
       emissoes: {
         Row: {
+          pagador_documento: string | null
+          pagador_instituicao: string | null
+          pagador_ispb: string | null
+          pagador_nome: string | null
           taxas_moeda: string | null
           taxas_valor_moeda: number | null
           taxas_cotacao: number | null
@@ -623,6 +627,10 @@ export type Database = {
           valor_recebido: number | null
         }
         Insert: {
+          pagador_documento?: string | null
+          pagador_instituicao?: string | null
+          pagador_ispb?: string | null
+          pagador_nome?: string | null
           taxas_moeda?: string | null
           taxas_valor_moeda?: number | null
           taxas_cotacao?: number | null
@@ -731,6 +739,10 @@ export type Database = {
           valor_recebido?: number | null
         }
         Update: {
+          pagador_documento?: string | null
+          pagador_instituicao?: string | null
+          pagador_ispb?: string | null
+          pagador_nome?: string | null
           taxas_moeda?: string | null
           taxas_valor_moeda?: number | null
           taxas_cotacao?: number | null
@@ -1068,6 +1080,10 @@ export type Database = {
       }
       emissoes_terceirizadas: {
         Row: {
+          pagador_documento: string | null
+          pagador_instituicao: string | null
+          pagador_ispb: string | null
+          pagador_nome: string | null
           taxas_moeda: string | null
           taxas_valor_moeda: number | null
           taxas_cotacao: number | null
@@ -1171,6 +1187,10 @@ export type Database = {
           valor_recebido: number | null
         }
         Insert: {
+          pagador_documento?: string | null
+          pagador_instituicao?: string | null
+          pagador_ispb?: string | null
+          pagador_nome?: string | null
           taxas_moeda?: string | null
           taxas_valor_moeda?: number | null
           taxas_cotacao?: number | null
@@ -1274,6 +1294,10 @@ export type Database = {
           valor_recebido?: number | null
         }
         Update: {
+          pagador_documento?: string | null
+          pagador_instituicao?: string | null
+          pagador_ispb?: string | null
+          pagador_nome?: string | null
           taxas_moeda?: string | null
           taxas_valor_moeda?: number | null
           taxas_cotacao?: number | null
@@ -1776,6 +1800,10 @@ export type Database = {
       }
       reembolsos: {
         Row: {
+          pagador_documento: string | null
+          pagador_instituicao: string | null
+          pagador_ispb: string | null
+          pagador_nome: string | null
           a_pagar: boolean
           banco_pagamento: string | null
           cancelar: boolean
@@ -1852,6 +1880,10 @@ export type Database = {
           voo_proximo: boolean | null
         }
         Insert: {
+          pagador_documento?: string | null
+          pagador_instituicao?: string | null
+          pagador_ispb?: string | null
+          pagador_nome?: string | null
           a_pagar?: boolean
           banco_pagamento?: string | null
           cancelar?: boolean
@@ -1928,6 +1960,10 @@ export type Database = {
           voo_proximo?: boolean | null
         }
         Update: {
+          pagador_documento?: string | null
+          pagador_instituicao?: string | null
+          pagador_ispb?: string | null
+          pagador_nome?: string | null
           a_pagar?: boolean
           banco_pagamento?: string | null
           cancelar?: boolean

@@ -19,6 +19,11 @@ export interface DadosComprovante {
   idTransacao: string | null;
   pagoEm: string | null;
   qtdEmissoes?: number;
+  // Dados do recebedor devolvidos pelo banco na confirmacao (iguais ao extrato)
+  instituicao?: string | null;
+  agencia?: string | null;
+  conta?: string | null;
+  tipoConta?: string | null;
 }
 
 const brl = (v: number) =>
@@ -27,6 +32,17 @@ const brl = (v: number) =>
 const dataHora = (s: string | null) =>
   s ? new Date(s).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
     : new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
+const ROTULO_TIPO_CONTA: Record<string, string> = {
+  CORRENTE: "conta corrente",
+  CACC: "conta corrente",
+  POUPANCA: "poupança",
+  SVGS: "poupança",
+  CONTAPAGAMENTO: "conta de pagamento",
+  TRAN: "conta de pagamento",
+  SALARIO: "conta salário",
+  SLRY: "conta salário",
+};
 
 // Mascara parcial do CPF/CNPJ: confirma quem recebeu sem espalhar o documento inteiro.
 function mascararDoc(d: string | null): string | null {
@@ -47,6 +63,11 @@ export function comprovantePixArquivo(d: DadosComprovante): Promise<{ nome: stri
   linhas.push(["Favorecido", d.favorecido || "—"]);
   const doc = mascararDoc(d.documento);
   if (doc) linhas.push(["CPF/CNPJ", doc]);
+  if (d.instituicao) linhas.push(["Instituição", d.instituicao]);
+  if (d.agencia || d.conta) {
+    const tipo = d.tipoConta ? ROTULO_TIPO_CONTA[String(d.tipoConta).toUpperCase()] ?? d.tipoConta : null;
+    linhas.push(["Agência / Conta", `${d.agencia || "—"} / ${d.conta || "—"}${tipo ? ` (${tipo})` : ""}`]);
+  }
   if (d.chavePix) linhas.push(["Chave Pix", d.chavePix]);
   if (!ehFacial) {
     if (d.referencia) linhas.push(["Referência", d.referencia]);

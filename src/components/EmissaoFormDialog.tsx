@@ -20,6 +20,7 @@ import { Send, RefreshCw, Ban, Lock, CheckCircle2, Copy, Wallet, Layers } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CampoValorEmissao, camposCambioParaSalvar, valorEmReais, vCamposEmMoeda } from "@/components/CampoValorEmissao";
 import { contar } from "@/lib/plural";
+import { formatarDocumento, tipoDocumento, temPagador } from "@/lib/pagadorPix";
 
 interface Props {
   open: boolean;
@@ -634,6 +635,15 @@ export function EmissaoFormDialog({ open, onOpenChange, editing }: Props) {
                     {ed?.forma_cobranca === "pix" && (<>
                       <div className="grid gap-2"><Label>TXID (Pix)</Label><Input value={(ed as any)?.pix_txid || form.txid || ""} readOnly disabled /></div>
                       <div className="col-span-2 grid gap-2"><Label>Pix Copia e Cola</Label><Textarea value={(ed as any)?.pix_copia_cola || ""} readOnly disabled rows={2} className="font-mono text-xs" /></div>
+                    </>)}
+
+                    {/* Quem pagou (dados do banco: nome/documento via conciliação, instituição pelo e2eid) */}
+                    {temPagador(ed as any) && (<>
+                      <div className="col-span-2 mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pagador (dados do banco)</div>
+                      <div className="col-span-2 grid gap-2"><Label>Nome</Label><Input value={(ed as any)?.pagador_nome || "—"} readOnly disabled /></div>
+                      <div className="grid gap-2"><Label>{tipoDocumento((ed as any)?.pagador_documento) || "CPF/CNPJ"}</Label><Input value={formatarDocumento((ed as any)?.pagador_documento) || "—"} readOnly disabled className="font-mono" /></div>
+                      <div className="grid gap-2"><Label>Instituição</Label><Input value={(ed as any)?.pagador_instituicao || "—"} readOnly disabled /></div>
+                      {(ed as any)?.pix_e2eid && (<div className="col-span-2 grid gap-2"><Label>ID da transação (E2E)</Label><Input value={(ed as any).pix_e2eid} readOnly disabled className="font-mono text-xs" /></div>)}
                     </>)}
 
                     {/* Campos do checkout (cartão ou link de escolha) */}
